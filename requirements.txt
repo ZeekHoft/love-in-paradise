@@ -1,0 +1,2 @@
+spacy==3.8.4
+tl_calamancy_md @ https://huggingface.co/ljvmiranda921/tl_calamancy_md/resolve/main/tl_calamancy_md-any-py3-none-any.whl#sha256=ed8e18e09b7ac2664d97b05d0b66e638e4be20f2f2a96efea8a58693278d6b29
