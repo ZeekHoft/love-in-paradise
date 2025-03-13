@@ -1,27 +1,4 @@
 
-# import spacy
-# import re
-
-# # Load the Tagalog NLP model
-# nlp = spacy.load("tl_calamancy_md")
-
-# text = "Pangulo ng Pilipinas, nag-anunsyo ng bagong batas para sa edukasyon."
-# doc = nlp(re.sub('[^A-Za-z0-9]+', ' ', text))
-
-# for token in doc:
-#     if token.pos_ in ["NOUN", "VERB", "PROPN", "ADJ"]:
-#         print(token.text)
-#     # print(f"Word: {token.text}, POS: {token.pos_}, Lemma: {token.lemma_}")
-
-
-# # text = "well-known actress dies"
-
-
-# # for i in text:
-# #     seperate = text.split("-")
-# #     combined = '-'.join(seperate)
-# #     print(combined)
-
 
 
 import spacy

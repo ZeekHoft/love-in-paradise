@@ -22,5 +22,3 @@ for tokens in doc:
 
 
 
-
-
