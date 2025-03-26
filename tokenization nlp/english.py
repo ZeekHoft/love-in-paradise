@@ -4,19 +4,15 @@
 
 import spacy
 import re
-from time import sleep
+from util import tokenized, list_pos, target
 
 
 nlp = spacy.load("en_core_web_sm")
-text = ("Ceasefire shatters as Israel pounds Gaza with wave of deadly strikes ").split()
-# text = "is water wet?".split()
-
-tokenized = []
-list_pos = []
-target = ["NOUN", "VERB", "PROPN", "ADJ"]
+# text = ("Ceasefire shatters as Israel pounds Gaza with wave of deadly strikes ").split()
 
 
-class Tokenization_NLP(object):
+
+class Eng_Tokenization_NLP(object):
     
     def invalidNewsForChecking(self):
         print ("Not a valid news to be checked")
@@ -50,5 +46,5 @@ class Tokenization_NLP(object):
             self.invalidNewsForChecking()
         
 
-sol = Tokenization_NLP()
-print(sol.tokenizationProcess(text))
+sol = Eng_Tokenization_NLP()
+# print(sol.tokenizationProcess(text))
