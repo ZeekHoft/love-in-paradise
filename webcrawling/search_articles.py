@@ -1,12 +1,25 @@
 import requests
+import os
 
-API_KEY = open("API_KEY").read()
-SEARCH_ENGINE_ID = open("SEARCH_ENGINE_ID").read()
+api_file = "X:\\Every Gamed Developed\\algorithms for research\\webcrawling\\API_KEY"
+search_id_file = "X:\\Every Gamed Developed\\algorithms for research\\webcrawling\\SEARCH_ENGINE_ID"
+try:
+    with open (api_file, "r") as f:
+        API_KEY = f.read().strip()
+
+    with open (search_id_file, "r") as f:
+        SEARCH_ENGINE_ID = f.read().strip()
+
+except FileNotFoundError as e:
+    print(f"file not found: {e}")
+
+
 URL = "https://www.googleapis.com/customsearch/v1"
 
 
 # Returns a list of urls of news articles based on search query
-def search_articles(
+def search_news(
+    
     search_query,
     date_restrict="",
     exact_terms="",
@@ -14,7 +27,6 @@ def search_articles(
     results_amt=10,
 ):
     article_urls = []
-
     params = {
         "q": search_query,
         "key": API_KEY,
@@ -35,3 +47,12 @@ def search_articles(
             article_urls.append(article_url)
 
     return article_urls
+    
+results = search_news("Will new US sanctions on ICC judges be felt in Duterte case?")
+
+# results = search_news("Will new US sanctions on ICC judges be felt in Duterte case?")
+
+# for i in results:
+#     print(i)
+
+
