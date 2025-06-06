@@ -8,7 +8,7 @@ from util import tokenized, list_pos, target
 
 
 nlp = spacy.load("en_core_web_sm")
-# text = ("Ceasefire shatters as Israel pounds Gaza with wave of deadly strikes ").split()
+text = ("Ceasefire shatters as Israel pounds Gaza with wave of deadly strikes ").split()
 
 
 
@@ -24,7 +24,7 @@ class Eng_Tokenization_NLP(object):
     def tokenizationProcess(self, s):
         for i in s:
             tokenized.append(i)
-        # print(f"tokenized: {tokenized}")
+        print(f"tokenized: {tokenized}")
 
         combined_words = " ".join(tokenized).replace("-", "_")
         doc = nlp(re.sub('[^A-Za-z0-9_]+', ' ', combined_words))
@@ -47,4 +47,4 @@ class Eng_Tokenization_NLP(object):
         
 
 sol = Eng_Tokenization_NLP()
-# print(sol.tokenizationProcess(text))
+print(sol.tokenizationProcess(text))
