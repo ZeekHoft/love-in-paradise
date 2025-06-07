@@ -14,8 +14,6 @@ except FileNotFoundError as e:
 
 
 URL = "https://www.googleapis.com/customsearch/v1"
-
-
 # Returns a list of urls of news articles based on search query
 def search_news(
     search_query,
@@ -47,9 +45,25 @@ def search_news(
     return article_urls
 
 
-results = search_news("Will new US sanctions on ICC judges be felt in Duterte case?")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # results = search_news("Will new US sanctions on ICC judges be felt in Duterte case?")
-
+# results = search_news("Will new US sanctions on ICC judges be felt in Duterte case?")
 # for i in results:
 #     print(i)

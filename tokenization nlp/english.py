@@ -8,7 +8,7 @@ from util import tokenized, list_pos, target
 
 
 nlp = spacy.load("en_core_web_sm")
-text = ("Ceasefire shatters as Israel pounds Gaza with wave of deadly strikes ").split()
+text = ("LIST: Schools, organizations pushing Senate to proceed with VP Sara impeachment").split()
 
 
 
