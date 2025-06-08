@@ -7,7 +7,7 @@ import re
 from util import tokenized, list_pos, target
 
 nlp = spacy.load("tl_calamancy_md")
-# text = "Pangulo ng Pilipinas, nag-anunsyo ng bagong batas para sa edukasyon.".split()
+text = ("Pangulo ng Pilipinas, nag-anunsyo ng bagong batas para sa edukasyon.").split()
 
 
 
@@ -47,7 +47,7 @@ class Tag_Tokenization_NLP(object):
         
 
 sol = Tag_Tokenization_NLP()
-# print(sol.tokenizationProcess(text))
+print(sol.tokenizationProcess(text))
 
 
 
