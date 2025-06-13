@@ -8,7 +8,7 @@ export default function Header() {
             <nav>
                 <ul>
                     <li>
-                        <Link href="/page.js" className="hover:text-gray-300">
+                        <Link href="/home" className="hover:text-gray-300">
                             Home
                         </Link>
                     </li>

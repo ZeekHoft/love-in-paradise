@@ -2,8 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 
-from search_articles import search_news
-news_urls = (search_news("LIST: Schools, organizations pushing Senate to proceed with VP Sara impeachment"))
+from search_articles import Search_articles
+search_news = Search_articles()
+news_urls = (search_news.search_news("LIST: Schools, organizations pushing Senate to proceed with VP Sara impeachment"))
 for i in news_urls:
     print(i)
 
@@ -15,6 +16,8 @@ content_tag = "p"
 
 #im passing soup on each function parameter for reusability later, as the heading = soup same for content, if we want to repeat the same function without
 #rebuilding the whole thing passing soup would be beneficial
+
+
 for i in news_urls:
     response = requests.get(i)
     soup = BeautifulSoup(response.text, "html.parser")
