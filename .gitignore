@@ -1,3 +1,4 @@
 .venv/
+__pycache__/
 API_KEY
 SEARCH_ENGINE_ID
