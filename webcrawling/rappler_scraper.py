@@ -1,8 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
-import csv
 
-from search_articles import Search_articles
+# import csv
+
+# from .search_articles import Search_articles
 
 num_links = 0
 
