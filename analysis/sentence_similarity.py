@@ -12,22 +12,27 @@ Run the below code in the Python interpreter:
 
 
 class SentenceSimilarity:
+    def __init__(self):
+        self.model = SentenceTransformer("distiluse-base-multilingual-cased-v1")
+
+    # Set and encode main sentence that will be used for comparison.
+    def set_main_sentence(self, main_sentence):
+        self.ms_encoding = self.model.encode(main_sentence)
 
     # Searches for the most relevent/similar sentences using a base sentence
-    def find_similar_sentences(self, main_sentence, content):
+    def find_similar_sentences(self, content):
 
         # Separate content into list of sentences
         tokenized_sentences = sent_tokenize(content)
 
-        model = SentenceTransformer("distiluse-base-multilingual-cased-v1")
-        ms_encoding = model.encode(main_sentence)
-        ts_encoding = model.encode(tokenized_sentences)
+        # Encode sentences
+        ts_encoding = self.model.encode(tokenized_sentences)
 
         similarities = {}
 
         # Calculate cosine similarity for each sentence
         for i in range(len(tokenized_sentences)):
-            cosine_similarity = cos_sim(ms_encoding, ts_encoding[i])
+            cosine_similarity = cos_sim(self.ms_encoding, ts_encoding[i])
             similarities[tokenized_sentences[i]] = cosine_similarity[0][0].item()
 
         # Find most related sentences

@@ -50,8 +50,9 @@ def main():
     # Sentence similarity
     print("Finding relevant data:")
     sentence_similarity = SentenceSimilarity()
+    sentence_similarity.set_main_sentence(claim_input)
     for url, data in news_data.items():
-        ss = sentence_similarity.find_similar_sentences(claim_input, data["content"])
+        ss = sentence_similarity.find_similar_sentences(data["content"])
         most_similar_sentence = ss[0]
         print(most_similar_sentence)
         print("--from " + url + "\n")
