@@ -1,6 +1,6 @@
 import spacy
 import re
-from util import tokenized, list_pos, target, pos_tokens
+from .util import tokenized, list_pos, target, pos_tokens
 
 
 nlp = spacy.load("en_core_web_sm")
@@ -32,7 +32,7 @@ class Eng_Tokenization_NLP(object):
             if tokens.pos_ in target:
                 global elements
                 elements = f"{tokens.pos_} {current_word}"
-                print(elements)
+                # print(elements)
             list_pos.append(tokens.pos_)
 
             if tokens.pos_ not in pos_tokens.keys():
