@@ -10,6 +10,8 @@ Run the below code in the Python interpreter:
     nltk.download("punkt_tab")
 """
 
+CUTTOFF_SCORE = 0.25
+
 
 class SentenceSimilarity:
     def __init__(self):
@@ -35,12 +37,15 @@ class SentenceSimilarity:
             cosine_similarity = cos_sim(self.ms_encoding, ts_encoding[i])
             similarities[tokenized_sentences[i]] = cosine_similarity[0][0].item()
 
-        # Find most related sentences
-        top3_sentences = [
-            key
-            for key, value in sorted(
-                similarities.items(), key=lambda item: item[1], reverse=True
-            )
-        ][0:3]
+        sorted_score = sorted(
+            similarities.items(), key=lambda item: item[1], reverse=True
+        )
 
-        return top3_sentences
+        # Find most related sentences
+        top_sentences = [
+            (sentence, score)
+            for sentence, score in sorted_score
+            if score >= CUTTOFF_SCORE
+        ]
+
+        return top_sentences

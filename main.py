@@ -14,7 +14,7 @@ durations = []
 def main():
     time_overall = time()
     # Take claim input
-    claim_input = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI-generated videos."
+    claim_input = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 
     time_section = time()
     # Classify input if it is verifiable or not
@@ -42,7 +42,7 @@ def main():
     articles = webcrawler.search_news(
         search_query,
         exclude_terms="opinion",
-        results_amt=3,
+        results_amt=5,
     )
     durations.append(time() - time_section)
     print("List of articles: " + str(articles) + "\n")
@@ -65,9 +65,14 @@ def main():
     sentence_similarity.set_main_sentence(claim_input)
     for url, data in news_data.items():
         ss = sentence_similarity.find_similar_sentences(data["content"])
-        most_similar_sentence = ss[0]
-        print(most_similar_sentence)
-        print("--from " + url + "\n")
+        print(data["headline"])
+        if ss == []:
+            print("No similar sentences found.")
+        else:
+            print(" SCORE | SENTENCE")
+            for sentence, score in ss:
+                print(f"{score:.4f} | {sentence}")
+        print()
     durations.append(time() - time_section)
     durations.append(time() - time_overall)
 
