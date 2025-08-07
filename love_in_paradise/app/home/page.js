@@ -1,19 +1,38 @@
 "use client"
+import React, { useEffect, useState } from "react";
+
+function Home() {
+    const [message, setMessage] = useState("Loading...")
+    const [favorite_dog, setFavorite_Dog] = useState("Loading...")
 
 
-export default function Home() {
+    useEffect(() => {
+        fetch("http://localhost:8080/api/home")
+            .then((response) => response.json())
+            .then((data) => {
+                // console.log(data)
+                setMessage(data.message);
+                setFavorite_Dog(data.favorite_dog);
+
+            })
+
+    }, [])
     return (
 
 
-        <form action="/api/submit" method="post">
-            <label htmlFor="news">News:</label>
-            <input type="text" id="news" name="news" required />
+        <div>{message} {favorite_dog}
 
 
+        </div>
 
-            <button type="submit">Submit</button>
-        </form>
+        // <div className="h-screen flex items-center justify-center bg-black">
+        //     <input
+        //         className="border border-gray-400 rounded-md p-2 focus:border-blue-500 outline-none"
+        //         placeholder="Enter News"
+        //     />
+        // </div>
 
 
     );
 }
+export default Home;
