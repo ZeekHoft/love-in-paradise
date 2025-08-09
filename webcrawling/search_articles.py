@@ -18,15 +18,14 @@ URL = "https://www.googleapis.com/customsearch/v1"
 
 class Search_articles(object):
 
-
-
-
-# Returns a list of urls of news articles based on search query
-    def search_news(self,
+    # Returns a list of urls of news articles based on search query
+    def search_news(
+        self,
         search_query,
         date_restrict="",
         exact_terms="",
         exclude_terms="",
+        or_terms="",
         results_amt=10,
     ):
         article_urls = []
@@ -38,7 +37,7 @@ class Search_articles(object):
             "exactTerms": exact_terms,
             "excludeTerms": exclude_terms,
             "num": results_amt,
-            # "orTerms": "",
+            "orTerms": or_terms,
         }
 
         response = requests.get(url=URL, params=params)
