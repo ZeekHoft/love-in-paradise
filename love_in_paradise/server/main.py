@@ -9,12 +9,12 @@ from time import time
 
 ACCEPT_LIST = ["news claim", "statement"]
 durations = []
+news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 
-
-def love_in_paradise():
+def love_in_paradise(claim):
     time_overall = time()
     # Take claim input
-    claim_input = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+    claim_input = claim
 
     time_section = time()
     # Classify input if it is verifiable or not
@@ -85,10 +85,10 @@ def display_time():
     print(f"Tokenization: {durations[1]} seconds")
     print(f"Searching: {durations[2]} seconds")
     print(f"Page Scraping: {durations[3]} seconds")
-    print(f"Sentence Similarity: {durations[4]} seconds")
-    print(f"Overall program execution: {durations[5]} seconds")
+    print(f"Sentence Similarity: {durations[3]} seconds")
+    print(f"Overall program execution: {durations[3]} seconds")
 
 
 # if __name__ == "__main__":
-#     love_in_paradise()
+#     love_in_paradise(news)
 #     display_time()
