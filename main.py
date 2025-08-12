@@ -11,7 +11,7 @@ ACCEPT_LIST = ["news claim", "statement"]
 durations = []
 
 
-def main():
+def love_in_paradise():
     time_overall = time()
     # Take claim input
     claim_input = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
@@ -86,6 +86,6 @@ def display_time():
     print(f"Overall program execution: {durations[5]} seconds")
 
 
-if __name__ == "__main__":
-    main()
-    display_time()
+# if __name__ == "__main__":
+#     love_in_paradise()
+#     display_time()
