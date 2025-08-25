@@ -36,7 +36,13 @@ def love_in_paradise(claim):
     # Search articles/ Web crawling
     time_section = time()
     webcrawler = Search_articles()
+    target = ["VERB", "ADJ", "ADP", "AUX", "PRON", "DET"] 
+    
+    other_query = [tokenizer.pos_tokens.get(key) for key in target] #incase there are NoneTypes we use this
+    
+
     search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+    print(f"Other terms: {other_query} \n")
     print("Search Terms: " + search_query + "\n")
 
     articles = webcrawler.search_news(
@@ -56,10 +62,8 @@ def love_in_paradise(claim):
     for url, data in news_data.items():
         # print(data["headline"])
         print(data["content"])
-        return data["content"]
+        # return data["content"]
 
-    print()
-    
     # Sentence similarity
     print("Finding relevant data:")
     time_section = time()
@@ -71,7 +75,7 @@ def love_in_paradise(claim):
         if ss == []:
             print("No similar sentences found.")
         else:
-            print(" SCORE | SENTENCE")
+            print("SCORE | SENTENCE")
             for sentence, score in ss:
                 print(f"{score:.4f} | {sentence}")
         print()
@@ -88,6 +92,6 @@ def display_time():
     print(f"Overall program execution: {durations[3]} seconds")
 
 
-# if __name__ == "__main__":
-#     love_in_paradise(news)
-#     display_time()
+if __name__ == "__main__":
+    love_in_paradise(news)
+    display_time()
