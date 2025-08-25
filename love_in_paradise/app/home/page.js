@@ -2,27 +2,58 @@
 import React, { useEffect, useState } from "react";
 
 function Home() {
-    const [message, setMessage] = useState("Loading...")
-    const [favorite_dog, setFavorite_Dog] = useState("Loading...")
-    const [news, setNews] = useState("Loading")
-    //GET
+    const [message, setMessage] = useState("");
+    const [news, setNews] = useState("");
+    const [placeholder, setPlaceholder] = useState("");
 
-    // useEffect(() => {
-    //     fetch("http://localhost:8080/api/home")
-    //         .then((response) => response.json())
-    //         .then((data) => {
-    //             // console.log(data)
-    //             setMessage(data.message);
-    //             setFavorite_Dog(data.favorite_dog);
+    const rotatingPhrases = [
+        "Pigeon named Kevin runs for mayor, promises more breadcrumbs.",
+        "Breaking: Dog learns to code, builds better website than you.",
+        "Local cat starts podcast, gains 1M followers overnight.",
+        "Aliens demand WiFi password before invading.",
+        "Scientists baffled: bread now sentient and tweeting."
+    ];
 
-    //         })
+    useEffect(() => {
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let currentPhrase = rotatingPhrases[phraseIndex];
+        let typingForward = true;
 
-    // }, [])
+        const typeSpeed = 70;
+        const pauseTime = 2000;
 
-    //POST
+        const type = () => {
+            if (typingForward) {
+                setPlaceholder(currentPhrase.slice(0, charIndex + 1));
+                charIndex++;
+
+                if (charIndex === currentPhrase.length) {
+                    typingForward = false;
+                    setTimeout(type, pauseTime);
+                    return;
+                }
+            } else {
+                setPlaceholder(currentPhrase.slice(0, charIndex - 1));
+                charIndex--;
+
+                if (charIndex === 0) {
+                    typingForward = true;
+                    phraseIndex = (phraseIndex + 1) % rotatingPhrases.length;
+                    currentPhrase = rotatingPhrases[phraseIndex];
+                }
+            }
+            setTimeout(type, typeSpeed);
+        };
+
+        type();
+
+        return () => {
+
+        };
+    }, []);
 
     const handleSubmit = () => {
-
         const postData = async (url = '', data = {}) => {
             const response = await fetch(url, {
                 method: 'POST',
@@ -32,51 +63,44 @@ function Home() {
                 body: JSON.stringify(data)
             });
             return response.json();
-        }
-        postData("http://localhost:8080/api/home",
-            { name: news })
+        };
+
+        postData("http://localhost:8080/api/home", { name: news })
             .then(data => {
                 setMessage(data.message);
-                // setFavorite_Dog(data.favorite_dog);
-
             });
-    }
-
-
+    };
 
     return (
+        <div className="min-h-screen flex flex-col items-center justify-center">
 
 
+            <div className="relative w-full max-w-2xl">
+                <textarea 
+                    className="w-full h-32 text-base p-3 pr-20 rounded-xl border border-gray-300 mt-3 resize focus:outline-none focus:ring-0 focus:border-gray-300"  
+                    placeholder={placeholder}
+                    name="news" 
+                    value={news}
+                    onChange={(e) => setNews(e.target.value)} 
+                />
 
-        <div>
+                {news.trim() !== "" && (
+                    <button 
+                        className="absolute bottom-3 right-3 px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition"
+                        onClick={handleSubmit}
+                    >
+                        Submit
+                    </button>
+                )}
+            </div>
 
-
-            <input name="news" onChange={(e) => setNews(e.target.value)} />
-
-            <br>
-            </br>
-            <button onClick={handleSubmit}>Submit</button>
-
-            {/* {favorite_dog} */}
-
-
-            <br>
-            </br>
-            <br>
-            </br>
-
-
-            {message}
+            {message && (
+                <div className="mt-4 text-center text-lg text-gray-800">
+                    {message}
+                </div>
+            )}
         </div>
-
-        // <div className="h-screen flex items-center justify-center bg-black">
-        //     <input
-        //         className="border border-gray-400 rounded-md p-2 focus:border-blue-500 outline-none"
-        //         placeholder="Enter News"
-        //     />
-        // </div>
-
-
     );
 }
+
 export default Home;
