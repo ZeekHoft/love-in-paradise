@@ -1,6 +1,5 @@
 from clasification.check import classify_input
 from tokenization.english import Eng_Tokenization_NLP
-from tokenization.util import pos_tokens
 from webcrawling.search_articles import Search_articles
 from webcrawling.rappler_scraper import RapplerScraper
 from analysis.sentence_similarity import SentenceSimilarity
@@ -37,7 +36,7 @@ def love_in_paradise(claim):
     # Search articles/ Web crawling
     time_section = time()
     webcrawler = Search_articles()
-    search_query = " ".join(pos_tokens["PROPN"] + pos_tokens["NOUN"])
+    search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
     print("Search Terms: " + search_query + "\n")
 
     articles = webcrawler.search_news(
