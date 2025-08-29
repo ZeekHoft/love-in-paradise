@@ -54,9 +54,10 @@ class RapplerScraper:
             return " ".join(str.strip(content.text) for content in main_content)
 
 
-# search_news = Search_articles()
-# news_urls = search_news.search_news(
-#     "LIST: Schools, organizations pushing Senate to proceed with VP Sara impeachment"
-# )
+# search_news = RapplerScraper()
+# print(search_news.scrape_urls("https://www.rappler.com/newsbreak/investigative/senator-rodante-marcoleta-iglesia-ni-cristo-election"))
+
+
+
 # rap_scrap = RapplerScraper()
-# print(rap_scrap.scrape_urls(news_urls))
+# print(rap_scrap.scrape_urls("https://www.rappler.com/newsbreak/investigative/senator-rodante-marcoleta-iglesia-ni-cristo-election"))

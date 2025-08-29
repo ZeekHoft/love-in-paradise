@@ -2,6 +2,7 @@ from clasification.check import classify_input
 from tokenization.english import Eng_Tokenization_NLP
 from webcrawling.search_articles import Search_articles
 from webcrawling.rappler_scraper import RapplerScraper
+from webcrawling.article_scraper import ArticleScraper
 from analysis.sentence_similarity import SentenceSimilarity
 from time import time
 
@@ -36,30 +37,43 @@ def love_in_paradise(claim):
     # Search articles/ Web crawling
     time_section = time()
     webcrawler = Search_articles()
+
     search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+
     print("Search Terms: " + search_query + "\n")
 
     articles = webcrawler.search_news(
+
         search_query,
         exclude_terms="opinion",
         results_amt=5,
     )
+
     durations.append(time() - time_section)
     print("List of articles: " + str(articles) + "\n")
 
     # Scrape each article
     time_section = time()
-    rappler_scraper = RapplerScraper()
-    news_data = rappler_scraper.scrape_urls(articles)
-    durations.append(time() - time_section)
-    print("Headlines")
-    for url, data in news_data.items():
-        # print(data["headline"])
-        print(data["content"])
-        return data["content"]
 
-    print()
     
+    # rappler_scraper = RapplerScraper()
+    # news_data = rappler_scraper.scrape_urls(articles)
+    
+    articleScraper = ArticleScraper()
+    news_data = articleScraper.article_scraper(articles)
+
+
+    durations.append(time() - time_section)
+    for _ in range(len(articles)):
+        return news_data
+
+
+    # print("Headlines")
+    # for url, data in news_data.items():
+    #     # print(data["headline"])
+    #     print(data["content"])
+    #     # return data["content"]
+
     # Sentence similarity
     print("Finding relevant data:")
     time_section = time()
@@ -71,7 +85,7 @@ def love_in_paradise(claim):
         if ss == []:
             print("No similar sentences found.")
         else:
-            print(" SCORE | SENTENCE")
+            print("SCORE | SENTENCE")
             for sentence, score in ss:
                 print(f"{score:.4f} | {sentence}")
         print()
@@ -89,5 +103,5 @@ def display_time():
 
 
 # if __name__ == "__main__":
-#     love_in_paradise(news)
+#     print(love_in_paradise(news))
 #     display_time()
