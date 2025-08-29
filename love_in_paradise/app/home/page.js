@@ -5,6 +5,7 @@ function Home() {
     const [message, setMessage] = useState("");
     const [news, setNews] = useState("");
     const [placeholder, setPlaceholder] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const rotatingPhrases = [
         "Pigeon named Kevin runs for mayor, promises more breadcrumbs.",
@@ -22,6 +23,7 @@ function Home() {
 
         const typeSpeed = 70;
         const pauseTime = 2000;
+        let timeoutId;
 
         const type = () => {
             if (typingForward) {
@@ -30,7 +32,7 @@ function Home() {
 
                 if (charIndex === currentPhrase.length) {
                     typingForward = false;
-                    setTimeout(type, pauseTime);
+                    timeoutId = setTimeout(type, pauseTime);
                     return;
                 }
             } else {
@@ -43,17 +45,19 @@ function Home() {
                     currentPhrase = rotatingPhrases[phraseIndex];
                 }
             }
-            setTimeout(type, typeSpeed);
+            timeoutId = setTimeout(type, typeSpeed);
         };
 
         type();
 
         return () => {
-
+            clearTimeout(timeoutId);
         };
     }, []);
 
     const handleSubmit = () => {
+        setLoading(true);
+
         const postData = async (url = '', data = {}) => {
             const response = await fetch(url, {
                 method: 'POST',
@@ -65,35 +69,93 @@ function Home() {
             return response.json();
         };
 
-        postData("http://localhost:8080/api/home", { name: news })
-            .then(data => {
-                setMessage(data.message);
-            });
+        setTimeout(() => {
+            postData("http://localhost:8080/api/home", { name: news })
+                .then(data => {
+                    setLoading(false);
+                    setMessage(data.message);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    setLoading(false);
+                    setMessage("An error occurred. Please try again.");
+                });
+        }, 1500);
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="min-h-screen flex flex-col items-center justify-center relative">
+            <style>
+                {`
+                @keyframes hop {
+                    0%, 100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-10px);
+                    }
+                }
+                .dot {
+                    background: linear-gradient(to right, #ff6e7f, #bfe9ff);
+                }
+                .dot-animation {
+                    animation: hop 0.6s infinite;
+                }
+                .dot-animation-1 {
+                    animation-delay: 0s;
+                }
+                .dot-animation-2 {
+                    animation-delay: 0.1s;
+                }
+                .dot-animation-3 {
+                    animation-delay: 0.2s;
+                }
+                `}
+            </style>
 
+            {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
+                    <div className="flex space-x-2">
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-1"></div>
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-2"></div>
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-3"></div>
+                    </div>
+                </div>
+            )}
+            
+            <div className={`flex flex-col items-center w-full transition-opacity duration-500 ${loading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <div className="bigtext">
+                    <p>Hello.</p>
+                </div>
 
-            <div className="relative w-full max-w-2xl">
-                <textarea 
-                    className="w-full h-32 text-base p-3 pr-20 rounded-xl border border-gray-300 mt-3 resize focus:outline-none focus:ring-0 focus:border-gray-300"  
-                    placeholder={placeholder}
-                    name="news" 
-                    value={news}
-                    onChange={(e) => setNews(e.target.value)} 
-                />
+                <div className="bigtext2">
+                    <p>You got news to check?</p>
+                </div>
 
-                {news.trim() !== "" && (
-                    <button 
-                        className="absolute bottom-3 right-3 px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition"
-                        onClick={handleSubmit}
-                    >
-                        Submit
-                    </button>
-                )}
+                <div className="relative w-full max-w-2xl">
+                    <textarea 
+                        className="w-full h-32 text-base p-3 pr-20 rounded-xl mt-3 resize focus:outline-none focus:ring-0 focus:border-gray-300" 
+                        placeholder={placeholder}
+                        name="news" 
+                        value={news}
+                        onChange={(e) => setNews(e.target.value)} 
+                    />
+
+                    {news.trim() !== "" && (
+                        <button 
+                            className="absolute bottom-3 right-3 px-3 py-1 border rounded text-sm bg-black border border-white-500 text-white hover:bg-white hover:text-black transition"
+                            onClick={handleSubmit}
+                        >
+                            Submit
+                        </button>
+                    )}
+                </div>
+
+                <div className="disclaimer">
+                    <p>Deception Detector may display inaccurate information. Please supplement the responses with your own due diligence.</p>
+                </div>
             </div>
-
+            
             {message && (
                 <div className="mt-4 text-center text-lg text-gray-800">
                     {message}
