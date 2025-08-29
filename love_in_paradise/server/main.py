@@ -37,12 +37,9 @@ def love_in_paradise(claim):
     # Search articles/ Web crawling
     time_section = time()
     webcrawler = Search_articles()
-    target = ["VERB", "ADJ", "ADP", "AUX", "PRON", "DET"] 
-    
-    other_query = [tokenizer.pos_tokens.get(key) for key in target] #incase there are NoneTypes we use this
-    
+
     search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
-    print(f"Other terms: {other_query} \n")
+
     print("Search Terms: " + search_query + "\n")
 
     articles = webcrawler.search_news(
