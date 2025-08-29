@@ -41,19 +41,17 @@ def love_in_paradise(claim):
     
     other_query = [tokenizer.pos_tokens.get(key) for key in target] #incase there are NoneTypes we use this
     
-    try:
-        search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
-        print(f"Other terms: {other_query} \n")
-        print("Search Terms: " + search_query + "\n")
+    search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+    print(f"Other terms: {other_query} \n")
+    print("Search Terms: " + search_query + "\n")
 
-        articles = webcrawler.search_news(
+    articles = webcrawler.search_news(
 
-            search_query,
-            exclude_terms="opinion",
-            results_amt=5,
-        )
-    except Exception as e:
-        return "Input is not considered a news claim!"
+        search_query,
+        exclude_terms="opinion",
+        results_amt=5,
+    )
+
     durations.append(time() - time_section)
     print("List of articles: " + str(articles) + "\n")
 
