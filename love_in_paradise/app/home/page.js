@@ -2,26 +2,61 @@
 import React, { useEffect, useState } from "react";
 
 function Home() {
-    const [message, setMessage] = useState("Loading...")
-    const [favorite_dog, setFavorite_Dog] = useState("Loading...")
-    const [news, setNews] = useState("Loading")
-    //GET
+    const [message, setMessage] = useState("");
+    const [news, setNews] = useState("");
+    const [placeholder, setPlaceholder] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    // useEffect(() => {
-    //     fetch("http://localhost:8080/api/home")
-    //         .then((response) => response.json())
-    //         .then((data) => {
-    //             // console.log(data)
-    //             setMessage(data.message);
-    //             setFavorite_Dog(data.favorite_dog);
+    const rotatingPhrases = [
+        "Pigeon named Kevin runs for mayor, promises more breadcrumbs.",
+        "Breaking: Dog learns to code, builds better website than you.",
+        "Local cat starts podcast, gains 1M followers overnight.",
+        "Aliens demand WiFi password before invading.",
+        "Scientists baffled: bread now sentient and tweeting."
+    ];
 
-    //         })
+    useEffect(() => {
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let currentPhrase = rotatingPhrases[phraseIndex];
+        let typingForward = true;
 
-    // }, [])
+        const typeSpeed = 70;
+        const pauseTime = 2000;
+        let timeoutId;
 
-    //POST
+        const type = () => {
+            if (typingForward) {
+                setPlaceholder(currentPhrase.slice(0, charIndex + 1));
+                charIndex++;
+
+                if (charIndex === currentPhrase.length) {
+                    typingForward = false;
+                    timeoutId = setTimeout(type, pauseTime);
+                    return;
+                }
+            } else {
+                setPlaceholder(currentPhrase.slice(0, charIndex - 1));
+                charIndex--;
+
+                if (charIndex === 0) {
+                    typingForward = true;
+                    phraseIndex = (phraseIndex + 1) % rotatingPhrases.length;
+                    currentPhrase = rotatingPhrases[phraseIndex];
+                }
+            }
+            timeoutId = setTimeout(type, typeSpeed);
+        };
+
+        type();
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    }, []);
 
     const handleSubmit = () => {
+        setLoading(true);
 
         const postData = async (url = '', data = {}) => {
             const response = await fetch(url, {
@@ -32,51 +67,102 @@ function Home() {
                 body: JSON.stringify(data)
             });
             return response.json();
-        }
-        postData("http://localhost:8080/api/home",
-            { name: news })
-            .then(data => {
-                setMessage(data.message);
-                // setFavorite_Dog(data.favorite_dog);
+        };
 
-            });
-    }
-
-
+        setTimeout(() => {
+            postData("http://localhost:8080/api/home", { name: news })
+                .then(data => {
+                    setLoading(false);
+                    setMessage(data.message);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    setLoading(false);
+                    setMessage("An error occurred. Please try again.");
+                });
+        }, 1500);
+    };
 
     return (
+        <div className="min-h-screen flex flex-col items-center justify-center relative">
+            <style>
+                {`
+                @keyframes hop {
+                    0%, 100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-10px);
+                    }
+                }
+                .dot {
+                    background: linear-gradient(to right, #ff6e7f, #bfe9ff);
+                }
+                .dot-animation {
+                    animation: hop 0.6s infinite;
+                }
+                .dot-animation-1 {
+                    animation-delay: 0s;
+                }
+                .dot-animation-2 {
+                    animation-delay: 0.1s;
+                }
+                .dot-animation-3 {
+                    animation-delay: 0.2s;
+                }
+                `}
+            </style>
 
+            {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
+                    <div className="flex space-x-2">
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-1"></div>
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-2"></div>
+                        <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-3"></div>
+                    </div>
+                </div>
+            )}
+            
+            <div className={`flex flex-col items-center w-full transition-opacity duration-500 ${loading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <div className="bigtext">
+                    <p>Hello.</p>
+                </div>
 
+                <div className="bigtext2">
+                    <p>You got news to check?</p>
+                </div>
 
-        <div>
+                <div className="relative w-full max-w-2xl">
+                    <textarea 
+                        className="w-full h-32 text-base p-3 pr-20 rounded-xl mt-3 resize focus:outline-none focus:ring-0 focus:border-gray-300" 
+                        placeholder={placeholder}
+                        name="news" 
+                        value={news}
+                        onChange={(e) => setNews(e.target.value)} 
+                    />
 
+                    {news.trim() !== "" && (
+                        <button 
+                            className="absolute bottom-3 right-3 px-3 py-1 border rounded text-sm bg-black border border-white-500 text-white hover:bg-white hover:text-black transition"
+                            onClick={handleSubmit}
+                        >
+                            Submit
+                        </button>
+                    )}
+                </div>
 
-            <input name="news" onChange={(e) => setNews(e.target.value)} />
-
-            <br>
-            </br>
-            <button onClick={handleSubmit}>Submit</button>
-
-            {/* {favorite_dog} */}
-
-
-            <br>
-            </br>
-            <br>
-            </br>
-
-
-            {message}
+                <div className="disclaimer">
+                    <p>Deception Detector may display inaccurate information. Please supplement the responses with your own due diligence.</p>
+                </div>
+            </div>
+            
+            {message && (
+                <div className="mt-4 text-center text-lg text-gray-800">
+                    {message}
+                </div>
+            )}
         </div>
-
-        // <div className="h-screen flex items-center justify-center bg-black">
-        //     <input
-        //         className="border border-gray-400 rounded-md p-2 focus:border-blue-500 outline-none"
-        //         placeholder="Enter News"
-        //     />
-        // </div>
-
-
     );
 }
+
 export default Home;
