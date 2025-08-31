@@ -37,18 +37,18 @@ def love_in_paradise(claim):
     # Search articles/ Web crawling
     time_section = time()
     webcrawler = Search_articles()
+    try:
+        search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
 
-    search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+        print("Search Terms: " + search_query + "\n")
 
-    print("Search Terms: " + search_query + "\n")
-
-    articles = webcrawler.search_news(
-
-        search_query,
-        exclude_terms="opinion",
-        results_amt=5,
-    )
-
+        articles = webcrawler.search_news(
+            search_query,
+            exclude_terms="opinion",
+            results_amt=5,
+        )
+    except Exception as e:
+        return "Input is not considered a news claim!"
     durations.append(time() - time_section)
     print("List of articles: " + str(articles) + "\n")
 
