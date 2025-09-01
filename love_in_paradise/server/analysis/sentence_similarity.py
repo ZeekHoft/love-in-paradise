@@ -1,21 +1,17 @@
-from nltk.tokenize import sent_tokenize
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
-
-
-"""
-This class needs punkt_tab to be installed first
-Run the below code in the Python interpreter:
-    import nltk
-    nltk.download("punkt_tab")
-"""
 
 CUTTOFF_SCORE = 0.25
 
 
 class SentenceSimilarity:
-    def __init__(self):
+    """
+    For searching sentences similar to the claim in a document.
+    """
+
+    def __init__(self, nlp):
         self.model = SentenceTransformer("distiluse-base-multilingual-cased-v1")
+        self.nlp = nlp  # Spacy NLP model
 
     # Set and encode main sentence that will be used for comparison.
     def set_main_sentence(self, main_sentence):
@@ -25,7 +21,8 @@ class SentenceSimilarity:
     def find_similar_sentences(self, content):
 
         # Separate content into list of sentences
-        tokenized_sentences = sent_tokenize(content)
+        doc = self.nlp(content)
+        tokenized_sentences = [sent.text for sent in doc.sents]
 
         # Encode sentences
         ts_encoding = self.model.encode(tokenized_sentences)
