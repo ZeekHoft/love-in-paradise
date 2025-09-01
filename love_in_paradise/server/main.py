@@ -25,13 +25,13 @@ def love_in_paradise(claim):
 
     time_section = time()
     # Classify input if it is verifiable or not
-    # input_classification = classify_input(claim_input)
-    # if input_classification in ACCEPT_LIST:
-    #     # print(f"Input is a {input_classification}; proceeding to tokenization.")
-    #     pass
-    # else:
-    #     # print("Input is not considered a news claim!")
-    #     return
+    input_classification = classify_input(claim_input)
+    if input_classification in ACCEPT_LIST:
+        print(f"Input is a {input_classification}; proceeding to tokenization.")
+        pass
+    else:
+        print("Input is not considered a news claim!")
+        return
 
     durations.append(time() - time_section)
 
@@ -126,7 +126,6 @@ def love_in_paradise(claim):
             only_triples.extend(url_triples)
     claim_triple = info_ext.generate_triples(claim_input)
 
-    # generate_graph(only_triples)
     # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
     # ===============================================================
     # Given a list of the most relevant sentences from articles, evaluate them against the claim
@@ -140,22 +139,28 @@ def love_in_paradise(claim):
         subjects.append(ct[2])
     print("subjects: ", subjects)
     print("Relevant evidences:")
+    sources = []
     for source, url_triple in triples.items():
         for tri in url_triple:
             if list(set(subjects) & set(tri)):
                 print(tri)
-                relevant_evidence.append(" ".join(tri))
-    print(relevant_evidence)
-    # alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
+                relevant_evidence.append(tri)
+                if source not in sources:
+                    sources.append(source)
+    # print(relevant_evidence)
+    generate_graph(relevant_evidence)
+    alignments = evidence_alignment.calculate_entailment(
+        claim_input, [" ".join(e) for e in relevant_evidence]
+    )
     evidence_count = {
         "neutral": 0,
         "entailment": 0,
         "contradiction": 0,
     }
-    # for label, score in alignments:
-    #     evidence_count[label] += 1
-    # print("Evidences found:")
-    # print(evidence_count)
+    for label, score in alignments:
+        evidence_count[label] += 1
+    print("Number of evidences found:")
+    print(evidence_count)
 
     # AGGREGATION
     # ===============================================================
@@ -165,6 +170,30 @@ def love_in_paradise(claim):
     # Few disagree-ing confidence: low confidence, -> Likely False
     # More disagree-ing confidence: high confidence, -> False
 
+    entailment = evidence_count["entailment"]
+    contradiction = evidence_count["contradiction"]
+
+    # Score calculation
+    score = (entailment - contradiction) / (entailment + contradiction + 1)
+    print(f"Score: {score}")
+
+    # Verdict Assigment
+    THRESHOLD1 = 0.2
+    THRESHOLD2 = 0.4
+    if -THRESHOLD1 < score < THRESHOLD1:
+        verdict = "UNSURE"
+    elif score <= -THRESHOLD2:
+        verdict = "FALSE"
+    elif score <= -THRESHOLD1:
+        verdict = "LIKELY FALSE"
+    elif score >= THRESHOLD2:
+        verdict = "TRUE"
+    elif score >= THRESHOLD1:
+        verdict = "LIKELY TRUE"
+
+    print(f"Claim: {claim_input}")
+    print(f"VERDICT: {verdict}")
+
     # JUSTIFICATION GENERATION
     # ===============================================================
     # Use a template sentence for justification
@@ -173,6 +202,8 @@ def love_in_paradise(claim):
     # - Justification
     # - Top evidences
     # - Sources
+
+    return {"verdict": verdict, "just": "justification here"}
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():
