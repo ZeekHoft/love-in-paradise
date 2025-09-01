@@ -35,5 +35,7 @@ class EvidenceAlignment:
                 top_score = max_scores[i]
                 score = scores[i][top_score]
                 label = label_mapping[top_score]
+                print(f"{label}, {score}")
+                # Example: ("entailment", 0.35)
                 labels.append((label, score))
             return labels
