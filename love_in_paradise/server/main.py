@@ -47,9 +47,11 @@ def love_in_paradise(claim):
     time_section = time()
     webcrawler = Search_articles()
     try:
+
         search_query = " ".join(
             tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
         )
+
 
         print("Search Terms: " + search_query + "\n")
 
