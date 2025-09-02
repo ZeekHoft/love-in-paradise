@@ -6,16 +6,17 @@ from webcrawling.rappler_scraper import RapplerScraper
 from webcrawling.article_scraper import ArticleScraper
 from analysis.sentence_similarity import SentenceSimilarity
 from analysis.open_info_extraction import OpenInformationExtraction
+from llm.fact_checker_agent import FactCheckerAgent
 from analysis.utils import generate_graph
 import spacy
 from time import time
 
-# from llm.fact_checker_agent import FactCheckerAgent
 
 ACCEPT_LIST = ["news claim", "statement"]
 durations = []
 news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 nlp = spacy.load("en_core_web_sm")
+USE_LLM = False
 
 
 def love_in_paradise(claim):
@@ -51,7 +52,6 @@ def love_in_paradise(claim):
         search_query = " ".join(
             tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
         )
-
 
         print("Search Terms: " + search_query + "\n")
 
@@ -151,6 +151,18 @@ def love_in_paradise(claim):
                     sources.append(source)
     # print(relevant_evidence)
     generate_graph(relevant_evidence)
+
+    # # print("==============================")
+    # # print("LLM Response:")
+    if USE_LLM == True:
+        fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
+        agent_response = fca.verify()
+        if agent_response:
+            return {
+                "verdict": agent_response[0],
+                "justification": agent_response[1],
+            }
+
     alignments = evidence_alignment.calculate_entailment(
         claim_input, [" ".join(e) for e in relevant_evidence]
     )
@@ -205,22 +217,11 @@ def love_in_paradise(claim):
     # - Top evidences
     # - Sources
 
-    return {"verdict": verdict, "just": "justification here"}
+    return {"verdict": verdict, "justification": "justification here"}
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():
     #     print(f"{url[:-10]}...:", data)
-
-    # # print("==============================")
-    # # print("LLM Response:")
-    # fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
-    # agent_response = fca.verify()
-    # if agent_response:
-    #     return {
-    #         "claim": claim_input,
-    #         "verdict": agent_response[0],
-    #         "justification": agent_response[1],
-    #     }
 
     # durations.append(time() - time_overall)
 
