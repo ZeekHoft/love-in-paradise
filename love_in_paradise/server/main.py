@@ -12,11 +12,11 @@ import spacy
 from time import time
 
 
-ACCEPT_LIST = ["news claim", "statement"]
+ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
 news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 nlp = spacy.load("en_core_web_sm")
-USE_LLM = False
+USE_LLM = True
 
 
 def love_in_paradise(claim):
@@ -158,10 +158,11 @@ def love_in_paradise(claim):
         fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
         agent_response = fca.verify()
         if agent_response:
-            return {
-                "verdict": agent_response[0],
-                "justification": agent_response[1],
-            }
+            return agent_response[0]
+            # return {
+            #     "verdict": agent_response[0],
+            #     "justification": agent_response[1],
+            # }
 
     alignments = evidence_alignment.calculate_entailment(
         claim_input, [" ".join(e) for e in relevant_evidence]
@@ -217,7 +218,7 @@ def love_in_paradise(claim):
     # - Top evidences
     # - Sources
 
-    return {"verdict": verdict, "justification": "justification here"}
+    return verdict
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():

@@ -172,10 +172,10 @@ function Home() {
                         <p>Verdict:</p>
                     </div>
                     <div className="bigtext">
-                        <p>True</p>
+                        <p>{message}</p>
                     </div>
                     <div className="mt-4 text-center text-lg text-gray-800">
-                        {message}
+                        {/* {message} */}
                     </div>
                     <button
                         onClick={handleTryAgain}
