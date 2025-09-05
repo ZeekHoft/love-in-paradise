@@ -2,12 +2,12 @@ import newspaper
 
 # import validators
 
-list_of_urls = [
-            "https://www.bworldonline.com/top-stories/2025/09/05/696236/philippine-banks-npl-ratio-rises-to-8-month-high-in-july",
-            "https://www.bworldonline.com/top-stories/2025/09/05/695808/ng-outstanding-debt-surges-to-record-p17-56-trillion-as-of-end-july",
-            "https://www.bworldonline.com/top-stories/2025/09/05/696273/new-law-allows-foreign-investors-to-lease-land-in-the-philippines-for-up-to-99-years",
-            "https://www.bworldonline.com/top-stories/2025/09/05/696136/philippine-inflation-quickens-to-1-5-in-august"
-            ]
+# list_of_urls = [
+#             "https://www.bworldonline.com/top-stories/2025/09/05/696236/philippine-banks-npl-ratio-rises-to-8-month-high-in-july",
+#             "https://www.bworldonline.com/top-stories/2025/09/05/695808/ng-outstanding-debt-surges-to-record-p17-56-trillion-as-of-end-july",
+#             "https://www.bworldonline.com/top-stories/2025/09/05/696273/new-law-allows-foreign-investors-to-lease-land-in-the-philippines-for-up-to-99-years",
+#             "https://www.bworldonline.com/top-stories/2025/09/05/696136/philippine-inflation-quickens-to-1-5-in-august"
+#             ]
 
 
 # Parse through each url and display its content
@@ -39,5 +39,5 @@ class ArticleScraper:
 
 
 
-news = ArticleScraper()
-print(news.article_scraper(list_of_urls))
+# news = ArticleScraper()
+# print(news.article_scraper(list_of_urls))

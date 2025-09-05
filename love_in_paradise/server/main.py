@@ -26,16 +26,13 @@ def love_in_paradise(claim):
 
     time_section = time()
     # Classify input if it is verifiable or not
-    # input_classification = classify_input(claim_input)
-    # if input_classification in ACCEPT_LIST:
-    #     # print(f"Input is a {input_classification}; proceeding to tokenization.")
-    #     pass
-    # else:
-    #     # print("Input is not considered a news claim!")
-    #     return
-
+    input_classification = classify_input(claim_input)
+    if input_classification in ACCEPT_LIST:
+        print(f"Input is a {input_classification}; proceeding to tokenization.")
+    else:
+        print("Input is not considered a news claim!")
+        return ("Input is not considered a news claim!")
     durations.append(time() - time_section)
-
     # Tokenize
     time_section = time()
     tokenizer = Eng_Tokenization_NLP()
@@ -52,17 +49,14 @@ def love_in_paradise(claim):
         search_query = " ".join(
             tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
         )
-
-
         print("Search Terms: " + search_query + "\n")
-
         articles = webcrawler.search_news(
             search_query,
             exclude_terms="opinion",
             results_amt=5,
         )
     except Exception as e:
-        return "Input is not considered a news claim!"
+        return (f"Input is not considered a news claim!!!!!!!!!!!!!!{e} ")
     durations.append(time() - time_section)
 
     # Scrape each article
