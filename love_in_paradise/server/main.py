@@ -14,7 +14,8 @@ from time import time
 
 ACCEPT_LIST = ["news claim", "statement"]
 durations = []
-news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+# news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -108,56 +109,60 @@ def love_in_paradise(claim):
 
     # Information Extraction
     # ===============================================================
+    try:
+        triples = {}
+        """
+        triples = {
+            url: [(triple), (triple)],
+        }
+        """
+        only_triples = []
+        info_ext = OpenInformationExtraction()
+        for url, sentences in relevant_sentences.items():
+            url_triples = []
+            for sent in sentences:
+                gen_triples = info_ext.generate_triples(sent)
+                if gen_triples:
+                    url_triples.extend(gen_triples)
+            if url_triples != []:
+                triples[url] = url_triples
+                only_triples.extend(url_triples)
+        claim_triple = info_ext.generate_triples(claim_input)
 
-    triples = {}
-    """
-    triples = {
-        url: [(triple), (triple)],
-    }
-    """
-    only_triples = []
-    info_ext = OpenInformationExtraction()
-    for url, sentences in relevant_sentences.items():
-        url_triples = []
-        for sent in sentences:
-            gen_triples = info_ext.generate_triples(sent)
-            if gen_triples:
-                url_triples.extend(gen_triples)
-        if url_triples != []:
-            triples[url] = url_triples
-            only_triples.extend(url_triples)
-    claim_triple = info_ext.generate_triples(claim_input)
+        # generate_graph(only_triples)
+        # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
+        # ===============================================================
+        # Given a list of the most relevant sentences from articles, evaluate them against the claim
+        # -> evidences = {"agree", "disagree", "neutral"}
+        evidence_alignment = EvidenceAlignment()
+        relevant_evidence = []
+        # get related triples
+        subjects = []
+        for ct in claim_triple:
+            subjects.append(ct[0])
+            subjects.append(ct[2])
+        print("subjects: ", subjects)
+        print("Relevant evidences:")
+        for source, url_triple in triples.items():
+            for tri in url_triple:
+                if list(set(subjects) & set(tri)):
+                    print(f"urls in tri: {tri}")
+                    relevant_evidence.append(" ".join(tri))
+        print(f"evidences: {relevant_evidence}")
+        alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
+        evidence_count = {
+            "neutral": 0,
+            "entailment": 0,
+            "contradiction": 0,
+        }
+        for label, score in alignments:
+            evidence_count[label] += 1
+        print("Evidences found:")
+        print(evidence_count)
+    except Exception as e:
+        return (f"Error in algo here: {e}")
 
-    # generate_graph(only_triples)
-    # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
-    # ===============================================================
-    # Given a list of the most relevant sentences from articles, evaluate them against the claim
-    # -> evidences = {"agree", "disagree", "neutral"}
-    evidence_alignment = EvidenceAlignment()
-    relevant_evidence = []
-    # get related triples
-    subjects = []
-    for ct in claim_triple:
-        subjects.append(ct[0])
-        subjects.append(ct[2])
-    print("subjects: ", subjects)
-    print("Relevant evidences:")
-    for source, url_triple in triples.items():
-        for tri in url_triple:
-            if list(set(subjects) & set(tri)):
-                print(tri)
-                relevant_evidence.append(" ".join(tri))
-    print(relevant_evidence)
-    # alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
-    evidence_count = {
-        "neutral": 0,
-        "entailment": 0,
-        "contradiction": 0,
-    }
-    # for label, score in alignments:
-    #     evidence_count[label] += 1
-    # print("Evidences found:")
-    # print(evidence_count)
+
 
     # AGGREGATION
     # ===============================================================
@@ -203,7 +208,7 @@ def display_time():
     print(f"Overall program execution: {durations[3]} seconds")
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # claims = [
     #     "A new disease called chikungunya is spreading in China.",
     #     "Three million Filipinos were cured by a non-surgical arthritis treatment, certified and endorsed by the Department of Health (DOH) and the Philippine Orthopedic Center (POC)",
@@ -223,5 +228,5 @@ if __name__ == "__main__":
     #     print(f"Claim: {result["claim"]}")
     #     print(f"Verdict: {result["verdict"]}")
     #     print(f"Justification: {result["justification"]}")
-    love_in_paradise(news)
+# love_in_paradise(news)
     # display_time()

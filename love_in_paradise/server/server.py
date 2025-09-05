@@ -18,7 +18,8 @@ def handle_post_request():
   data = request.get_json()
   if data:
     
-    name = data.get('name').title()
+    name = data.get('name')
+    print(f"ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss{name}")
     return jsonify({
        'message': f"ALL NEWS: \n {love_in_paradise(name)}"
       #  'message': f"ALL NEWS: \n {(name)}"
