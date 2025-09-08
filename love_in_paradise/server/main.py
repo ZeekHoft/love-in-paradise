@@ -16,7 +16,7 @@ ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
 # news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 # news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
-news = "A Facebook video claims to bear the link to an online registration for cash assistance offered by the Department of Social Welfare and Development (DSWD) to students from pre-elementary to college."
+news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -45,8 +45,8 @@ def love_in_paradise(claim):
             print("Input is not considered a news claim!")
             return ("Input is not considered a news claim!")
     except Exception as e:
-        print((f"Input is not considered a news claim!!!!!!!!!!!!!!{e}"))
-        return (f"Input is not considered a news claim!!!!!!!!!!!!!!{e}")
+        print((f"News claim has missing some missing key elements: {e}"))
+        return (f"News claim has missing some missing key elements: {e}")
 
 
     # Classify input if it is verifiable or not
@@ -267,5 +267,5 @@ def display_time():
     #     print(f"Claim: {result["claim"]}")
     #     print(f"Verdict: {result["verdict"]}")
     #     print(f"Justification: {result["justification"]}")
-# love_in_paradise(news)
+love_in_paradise(news)
     # display_time()
