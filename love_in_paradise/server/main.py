@@ -12,10 +12,11 @@ from time import time
 
 # from llm.fact_checker_agent import FactCheckerAgent
 
-ACCEPT_LIST = ["news claim", "statement"]
+ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
 # news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
-news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
+# news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
+news = "A Facebook video claims to bear the link to an online registration for cash assistance offered by the Department of Social Welfare and Development (DSWD) to students from pre-elementary to college."
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -25,38 +26,43 @@ def love_in_paradise(claim):
     claim_input = claim
 
     time_section = time()
-    # Classify input if it is verifiable or not
-    input_classification = classify_input(claim_input)
-    if input_classification in ACCEPT_LIST:
-        print(f"Input is a {input_classification}; proceeding to tokenization.")
-    else:
-        print("Input is not considered a news claim!")
-        return ("Input is not considered a news claim!")
-    durations.append(time() - time_section)
-    # Tokenize
-    time_section = time()
     tokenizer = Eng_Tokenization_NLP()
     tokenizer.tokenizationProcess(word_list=claim_input.split())
     durations.append(time() - time_section)
+    webcrawler = Search_articles()
+    try:
+        input_classification = classify_input(claim_input)
+        if input_classification in ACCEPT_LIST :
+            print(f"Input is a {input_classification}; proceeding to tokenization.")
+            search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+            print("Search Terms: " + search_query + "\n")
+            articles = webcrawler.search_news(
+                search_query,
+                exclude_terms="opinion",
+                results_amt=5,
+            )
+        else:
+            print("Input is not considered a news claim!")
+            return ("Input is not considered a news claim!")
+    except Exception as e:
+        print((f"Input is not considered a news claim!!!!!!!!!!!!!!{e}"))
+        return (f"Input is not considered a news claim!!!!!!!!!!!!!!{e}")
+
+
+    # Classify input if it is verifiable or not
+    
+  
+    durations.append(time() - time_section)
+    # Tokenize
+    time_section = time()
+    
     print("Finished tokenization.")
 
     # *.rappler.com/*
     # Search articles/ Web crawling
     time_section = time()
-    webcrawler = Search_articles()
-    try:
-
-        search_query = " ".join(
-            tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
-        )
-        print("Search Terms: " + search_query + "\n")
-        articles = webcrawler.search_news(
-            search_query,
-            exclude_terms="opinion",
-            results_amt=5,
-        )
-    except Exception as e:
-        return (f"Input is not considered a news claim!!!!!!!!!!!!!!{e} ")
+   
+    
     durations.append(time() - time_section)
 
     # Scrape each article
@@ -135,6 +141,7 @@ def love_in_paradise(claim):
         for ct in claim_triple:
             subjects.append(ct[0])
             subjects.append(ct[2])
+
         print("subjects: ", subjects)
         print("Relevant evidences:")
         for source, url_triple in triples.items():
@@ -143,16 +150,25 @@ def love_in_paradise(claim):
                     print(f"urls in tri: {tri}")
                     relevant_evidence.append(" ".join(tri))
         print(f"evidences: {relevant_evidence}")
-        alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
-        evidence_count = {
-            "neutral": 0,
-            "entailment": 0,
-            "contradiction": 0,
-        }
-        for label, score in alignments:
-            evidence_count[label] += 1
-        print("Evidences found:")
-        print(evidence_count)
+
+        if subjects == [] and relevant_evidence == []:
+            return "This news claim seems to be low on information"
+        else:
+            alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
+            evidence_count = {
+                "neutral": 0,
+                "entailment": 0,
+                "contradiction": 0,
+            }
+            for label, score in alignments:
+                evidence_count[label] += 1
+            print("Evidences found:")
+            print(evidence_count)
+
+
+
+
+
     except Exception as e:
         return (f"Error in algo here: {e}")
 
@@ -166,6 +182,30 @@ def love_in_paradise(claim):
     # Few disagree-ing confidence: low confidence, -> Likely False
     # More disagree-ing confidence: high confidence, -> False
 
+    entailment = evidence_count["entailment"]
+    contradiction = evidence_count["contradiction"]
+
+    # Score calculation
+    score = (entailment - contradiction) / (entailment + contradiction + 1)
+    print(f"Score: {score}")
+
+    # Verdict Assigment
+    THRESHOLD1 = 0.2
+    THRESHOLD2 = 0.4
+    if -THRESHOLD1 < score < THRESHOLD1:
+        verdict = "UNSURE"
+    elif score <= -THRESHOLD2:
+        verdict = "FALSE"
+    elif score <= -THRESHOLD1:
+        verdict = "LIKELY FALSE"
+    elif score >= THRESHOLD2:
+        verdict = "TRUE"
+    elif score >= THRESHOLD1:
+        verdict = "LIKELY TRUE"
+
+    print(f"Claim: {claim_input}")
+    print(f"VERDICT: {verdict}")
+
     # JUSTIFICATION GENERATION
     # ===============================================================
     # Use a template sentence for justification
@@ -174,6 +214,11 @@ def love_in_paradise(claim):
     # - Justification
     # - Top evidences
     # - Sources
+
+    # return {"verdict": verdict, "just": "justification here"}
+    return verdict
+
+
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():
