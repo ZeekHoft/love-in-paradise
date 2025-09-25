@@ -12,9 +12,11 @@ from time import time
 
 # from llm.fact_checker_agent import FactCheckerAgent
 
-ACCEPT_LIST = ["news claim", "statement"]
+ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
-news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+# news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+# news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
+news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -24,44 +26,55 @@ def love_in_paradise(claim):
     claim_input = claim
 
     time_section = time()
-    # Classify input if it is verifiable or not
-    input_classification = classify_input(claim_input)
-    if input_classification in ACCEPT_LIST:
-        print(f"Input is a {input_classification}; proceeding to tokenization.")
-        pass
-    else:
-        print("Input is not considered a news claim!")
-        return
-
-    durations.append(time() - time_section)
-
-    # Tokenize
-    time_section = time()
     tokenizer = Eng_Tokenization_NLP()
     tokenizer.tokenizationProcess(word_list=claim_input.split())
+
+    # Classify input if it is verifiable or not
+    # OLD CODE
+    # input_classification = classify_input(claim_input)
+    # if input_classification in ACCEPT_LIST:
+    #     print(f"Input is a {input_classification}; proceeding to tokenization.")
+    #     pass
+    # else:
+    #     print("Input is not considered a news claim!")
+    #     return
+
+
     durations.append(time() - time_section)
+    webcrawler = Search_articles()
+    try:
+        input_classification = classify_input(claim_input)
+        if input_classification in ACCEPT_LIST :
+            print(f"Input is a {input_classification}; proceeding to tokenization.")
+            search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+            print("Search Terms: " + search_query + "\n")
+            articles = webcrawler.search_news(
+                search_query,
+                exclude_terms="opinion",
+                results_amt=5,
+            )
+        else:
+            print("Input is not considered a news claim!")
+            return ("Input is not considered a news claim!")
+    except Exception as e:
+        print((f"News claim has missing some missing key elements: {e}"))
+        return (f"News claim has missing some missing key elements: {e}")
+
+
+    # Classify input if it is verifiable or not
+    
+  
+    durations.append(time() - time_section)
+    # Tokenize
+    time_section = time()
+    
     print("Finished tokenization.")
 
     # *.rappler.com/*
     # Search articles/ Web crawling
     time_section = time()
-    webcrawler = Search_articles()
-    try:
-
-        search_query = " ".join(
-            tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
-        )
-
-
-        print("Search Terms: " + search_query + "\n")
-
-        articles = webcrawler.search_news(
-            search_query,
-            exclude_terms="opinion",
-            results_amt=5,
-        )
-    except Exception as e:
-        return "Input is not considered a news claim!"
+   
+    
     durations.append(time() - time_section)
 
     # Scrape each article
@@ -108,6 +121,70 @@ def love_in_paradise(claim):
 
     # Information Extraction
     # ===============================================================
+    try:
+        triples = {}
+        """
+        triples = {
+            url: [(triple), (triple)],
+        }
+        """
+        only_triples = []
+        info_ext = OpenInformationExtraction()
+        for url, sentences in relevant_sentences.items():
+            url_triples = []
+            for sent in sentences:
+                gen_triples = info_ext.generate_triples(sent)
+                if gen_triples:
+                    url_triples.extend(gen_triples)
+            if url_triples != []:
+                triples[url] = url_triples
+                only_triples.extend(url_triples)
+        claim_triple = info_ext.generate_triples(claim_input)
+
+        # generate_graph(only_triples)
+        # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
+        # ===============================================================
+        # Given a list of the most relevant sentences from articles, evaluate them against the claim
+        # -> evidences = {"agree", "disagree", "neutral"}
+        evidence_alignment = EvidenceAlignment()
+        relevant_evidence = []
+        # get related triples
+        subjects = []
+        for ct in claim_triple:
+            subjects.append(ct[0])
+            subjects.append(ct[2])
+
+        print("subjects: ", subjects)
+        print("Relevant evidences:")
+        for source, url_triple in triples.items():
+            for tri in url_triple:
+                if list(set(subjects) & set(tri)):
+                    print(f"urls in tri: {tri}")
+                    relevant_evidence.append(" ".join(tri))
+        print(f"evidences: {relevant_evidence}")
+
+        if subjects == [] and relevant_evidence == []:
+            return "This news claim seems to be low on information"
+        else:
+            alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
+            evidence_count = {
+                "neutral": 0,
+                "entailment": 0,
+                "contradiction": 0,
+            }
+            for label, score in alignments:
+                evidence_count[label] += 1
+            print("Evidences found:")
+            print(evidence_count)
+
+
+
+
+
+    except Exception as e:
+        return (f"Error in algo here: {e}")
+
+
 
     triples = {}
     """
@@ -164,6 +241,7 @@ def love_in_paradise(claim):
     print("Number of evidences found:")
     print(evidence_count)
 
+
     # AGGREGATION
     # ===============================================================
     # More agree-ing evidences: higher confidence, -> True
@@ -205,7 +283,11 @@ def love_in_paradise(claim):
     # - Top evidences
     # - Sources
 
-    return {"verdict": verdict, "just": "justification here"}
+    # return {"verdict": verdict, "just": "justification here"}
+    return verdict
+
+    # return {"verdict": verdict, "just": "justification here"}
+
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():
@@ -234,7 +316,7 @@ def display_time():
     print(f"Overall program execution: {durations[3]} seconds")
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # claims = [
     #     "A new disease called chikungunya is spreading in China.",
     #     "Three million Filipinos were cured by a non-surgical arthritis treatment, certified and endorsed by the Department of Health (DOH) and the Philippine Orthopedic Center (POC)",
@@ -254,5 +336,5 @@ if __name__ == "__main__":
     #     print(f"Claim: {result["claim"]}")
     #     print(f"Verdict: {result["verdict"]}")
     #     print(f"Justification: {result["justification"]}")
-    love_in_paradise(news)
+love_in_paradise(news)
     # display_time()
