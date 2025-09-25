@@ -28,6 +28,18 @@ def love_in_paradise(claim):
     time_section = time()
     tokenizer = Eng_Tokenization_NLP()
     tokenizer.tokenizationProcess(word_list=claim_input.split())
+
+    # Classify input if it is verifiable or not
+    # OLD CODE
+    # input_classification = classify_input(claim_input)
+    # if input_classification in ACCEPT_LIST:
+    #     print(f"Input is a {input_classification}; proceeding to tokenization.")
+    #     pass
+    # else:
+    #     print("Input is not considered a news claim!")
+    #     return
+
+
     durations.append(time() - time_section)
     webcrawler = Search_articles()
     try:
@@ -174,6 +186,62 @@ def love_in_paradise(claim):
 
 
 
+    triples = {}
+    """
+    triples = {
+        url: [(triple), (triple)],
+    }
+    """
+    only_triples = []
+    info_ext = OpenInformationExtraction()
+    for url, sentences in relevant_sentences.items():
+        url_triples = []
+        for sent in sentences:
+            gen_triples = info_ext.generate_triples(sent)
+            if gen_triples:
+                url_triples.extend(gen_triples)
+        if url_triples != []:
+            triples[url] = url_triples
+            only_triples.extend(url_triples)
+    claim_triple = info_ext.generate_triples(claim_input)
+
+    # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
+    # ===============================================================
+    # Given a list of the most relevant sentences from articles, evaluate them against the claim
+    # -> evidences = {"agree", "disagree", "neutral"}
+    evidence_alignment = EvidenceAlignment()
+    relevant_evidence = []
+    # get related triples
+    subjects = []
+    for ct in claim_triple:
+        subjects.append(ct[0])
+        subjects.append(ct[2])
+    print("subjects: ", subjects)
+    print("Relevant evidences:")
+    sources = []
+    for source, url_triple in triples.items():
+        for tri in url_triple:
+            if list(set(subjects) & set(tri)):
+                print(tri)
+                relevant_evidence.append(tri)
+                if source not in sources:
+                    sources.append(source)
+    # print(relevant_evidence)
+    generate_graph(relevant_evidence)
+    alignments = evidence_alignment.calculate_entailment(
+        claim_input, [" ".join(e) for e in relevant_evidence]
+    )
+    evidence_count = {
+        "neutral": 0,
+        "entailment": 0,
+        "contradiction": 0,
+    }
+    for label, score in alignments:
+        evidence_count[label] += 1
+    print("Number of evidences found:")
+    print(evidence_count)
+
+
     # AGGREGATION
     # ===============================================================
     # More agree-ing evidences: higher confidence, -> True
@@ -218,6 +286,7 @@ def love_in_paradise(claim):
     # return {"verdict": verdict, "just": "justification here"}
     return verdict
 
+    # return {"verdict": verdict, "just": "justification here"}
 
 
     # print("DATA PASSED INTO PROMPT")
