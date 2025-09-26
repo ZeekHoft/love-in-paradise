@@ -1,0 +1,7 @@
+openie.resolve_coref=True
+
+annotators=openie,coref
+
+outputFormat=serialized
+
+be_quiet=True
