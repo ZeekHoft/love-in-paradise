@@ -159,9 +159,9 @@ def love_in_paradise(claim):
         for source, url_triple in triples.items():
             for tri in url_triple:
                 if list(set(subjects) & set(tri)):
-                    print(f"urls in tri: {tri}")
+                    # print(f"urls in tri: {tri}")
                     relevant_evidence.append(" ".join(tri))
-        print(f"evidences: {relevant_evidence}")
+        # print(f"evidences: {relevant_evidence}")
 
         if subjects == [] and relevant_evidence == []:
             return "This news claim seems to be low on information"
@@ -192,11 +192,12 @@ def love_in_paradise(claim):
 
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)
-    print(f"Score: {score}")
+    confidence = abs(score) * 100
+    print(f"Confidence Level: {confidence:.1f}%")
 
     # Verdict Assigment
-    THRESHOLD1 = 0.2
-    THRESHOLD2 = 0.4
+    THRESHOLD1 = 0.3
+    THRESHOLD2 = 0.45
     if -THRESHOLD1 < score < THRESHOLD1:
         verdict = "UNSURE"
     elif score <= -THRESHOLD2:
@@ -273,5 +274,5 @@ def display_time():
     #     print(f"Claim: {result["claim"]}")
     #     print(f"Verdict: {result["verdict"]}")
     #     print(f"Justification: {result["justification"]}")
-love_in_paradise(news)
+# print(love_in_paradise(news))
     # display_time()
