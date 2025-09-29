@@ -166,18 +166,27 @@ def love_in_paradise(claim):
         if subjects == [] and relevant_evidence == []:
             return "This news claim seems to be low on information"
         else:
-            alignments = evidence_alignment.calculate_entailment(claim_input, relevant_evidence)
+            alignments = evidence_alignment.calculate_entailment(
+                claim_input, relevant_evidence
+            )
             evidence_count = {
+                "neutral": 0,
+                "entailment": 0,
+                "contradiction": 0,
+            }
+            evidence_values = {
                 "neutral": 0,
                 "entailment": 0,
                 "contradiction": 0,
             }
             for label, score in alignments:
                 evidence_count[label] += 1
+                evidence_values[label] += score.item()
             print("Evidences found:")
             print(evidence_count)
+            print(evidence_values)
     except Exception as e:
-        return (f"Error in algo here: {e}")
+        return f"Error in algo here: {e}"
 
     # AGGREGATION
     # ===============================================================
@@ -187,8 +196,8 @@ def love_in_paradise(claim):
     # Few disagree-ing confidence: low confidence, -> Likely False
     # More disagree-ing confidence: high confidence, -> False
 
-    entailment = evidence_count["entailment"]
-    contradiction = evidence_count["contradiction"]
+    entailment = evidence_values["entailment"]
+    contradiction = evidence_values["contradiction"]
 
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)
