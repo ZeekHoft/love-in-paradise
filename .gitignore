@@ -1,4 +1,7 @@
 .venv/
+venv/
+lib/
+graph.html
 __pycache__/
 API_KEY
 SEARCH_ENGINE_ID
