@@ -1,16 +1,17 @@
-from clasification.check import classify_input
+from analysis.open_info_extraction import OpenInformationExtraction
+from analysis.sentence_similarity import SentenceSimilarity
 from analysis.evidence_alignment import EvidenceAlignment
-from tokenization.english import Eng_Tokenization_NLP
 from webcrawling.search_articles import Search_articles
 from webcrawling.rappler_scraper import RapplerScraper
 from webcrawling.article_scraper import ArticleScraper
-from analysis.sentence_similarity import SentenceSimilarity
-from analysis.open_info_extraction import OpenInformationExtraction
+from tokenization.english import Eng_Tokenization_NLP
+from llm.fact_checker_agent import FactCheckerAgent
+from clasification.check import classify_input
 from analysis.utils import generate_graph
-import spacy
-from time import time
 
-# from llm.fact_checker_agent import FactCheckerAgent
+from time import time
+import spacy
+
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
