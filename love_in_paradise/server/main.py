@@ -35,9 +35,11 @@ def love_in_paradise(claim):
     webcrawler = Search_articles()
     try:
         input_classification = classify_input(claim_input)
-        if input_classification in ACCEPT_LIST :
+        if input_classification in ACCEPT_LIST:
             print(f"Input is a {input_classification}; proceeding to tokenization.")
-            search_query = " ".join(tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"])
+            search_query = " ".join(
+                tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
+            )
             print("Search Terms: " + search_query + "\n")
             articles = webcrawler.search_news(
                 search_query,
@@ -46,26 +48,23 @@ def love_in_paradise(claim):
             )
         else:
             print("Input is not considered a news claim!")
-            return ("Input is not considered a news claim!")
+            return "Input is not considered a news claim!"
     except Exception as e:
         print((f"News claim has missing some missing key elements: {e}"))
-        return (f"News claim has missing some missing key elements: {e}")
-
+        return f"News claim has missing some missing key elements: {e}"
 
     # Classify input if it is verifiable or not
-    
-  
+
     durations.append(time() - time_section)
     # Tokenize
     time_section = time()
-    
+
     print("Finished tokenization.")
 
     # *.rappler.com/*
     # Search articles/ Web crawling
     time_section = time()
-   
-    
+
     durations.append(time() - time_section)
 
     # Scrape each article
@@ -225,7 +224,6 @@ def love_in_paradise(claim):
     return verdict
 
     # return {"verdict": verdict, "just": "justification here"}
-
 
     # print("DATA PASSED INTO PROMPT")
     # for url, data in relevant_sentences.items():
