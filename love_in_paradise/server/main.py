@@ -31,16 +31,6 @@ def love_in_paradise(claim):
     tokenizer.tokenizationProcess(word_list=claim_input.split())
 
     # Classify input if it is verifiable or not
-    # OLD CODE
-    # input_classification = classify_input(claim_input)
-    # if input_classification in ACCEPT_LIST:
-    #     print(f"Input is a {input_classification}; proceeding to tokenization.")
-    #     pass
-    # else:
-    #     print("Input is not considered a news claim!")
-    #     return
-
-
     durations.append(time() - time_section)
     webcrawler = Search_articles()
     try:
