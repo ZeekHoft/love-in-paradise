@@ -21,7 +21,7 @@ news = "All persons who received a COVID-19 vaccine may develop diseases such as
 nlp = spacy.load("en_core_web_sm")
 
 
-def love_in_paradise(claim):
+def love_in_paradise(claim, use_llm=False):
     time_overall = time()
     # Take claim input
     claim_input = claim
@@ -221,7 +221,6 @@ def love_in_paradise(claim):
     # - Sources
 
     # return {"verdict": verdict, "just": "justification here"}
-    return verdict
 
     # return {"verdict": verdict, "just": "justification here"}
 
@@ -229,16 +228,21 @@ def love_in_paradise(claim):
     # for url, data in relevant_sentences.items():
     #     print(f"{url[:-10]}...:", data)
 
-    # # print("==============================")
-    # # print("LLM Response:")
-    # fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
-    # agent_response = fca.verify()
-    # if agent_response:
-    #     return {
-    #         "claim": claim_input,
-    #         "verdict": agent_response[0],
-    #         "justification": agent_response[1],
-    #     }
+    print("==============================")
+    print("LLM Response:")
+    if use_llm:
+        fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
+        agent_response = fca.verify()
+        if agent_response:
+            agent_result = {
+                "claim": claim_input,
+                "verdict": agent_response[0],
+                "justification": agent_response[1],
+            }
+            print(agent_result)
+        return agent_result["verdict"]
+
+    return verdict
 
     # durations.append(time() - time_overall)
 
