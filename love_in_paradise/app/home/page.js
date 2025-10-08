@@ -27,6 +27,7 @@ function Home() {
     const pauseTime = 2000;
     let timeoutId;
 
+    // Typewriter Effect
     const type = () => {
       if (typingForward) {
         setPlaceholder(currentPhrase.slice(0, charIndex + 1));
@@ -60,6 +61,7 @@ function Home() {
   const handleSubmit = () => {
     setLoading(true);
 
+    // Post request function
     const postData = async (url = "", data = {}) => {
       const response = await fetch(url, {
         method: "POST",
@@ -72,8 +74,10 @@ function Home() {
     };
 
     setTimeout(() => {
+      // Make post request here
       postData("http://localhost:8080/api/home", { name: news })
         .then((data) => {
+          // Display verdict
           setLoading(false);
           setMessage(data.message);
           setIsVerdictTrue(true);
@@ -84,7 +88,7 @@ function Home() {
           setLoading(false);
           setMessage("An error occurred. Please try again.");
         });
-    }, 1500);
+    }, 1500); // 1.5 second timeout
   };
 
   const handleTryAgain = () => {
@@ -124,6 +128,8 @@ function Home() {
       </style>
 
       {loading && (
+        //  Loading Screen ==============================
+
         <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
           <div className="flex space-x-2">
             <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-1"></div>
@@ -134,6 +140,8 @@ function Home() {
       )}
 
       {!showVerdict ? (
+        // Normal Homescreen ===========================
+
         <div
           className={`flex flex-col items-center w-full transition-opacity duration-500 ${
             loading ? "opacity-0 pointer-events-none" : "opacity-100"
@@ -174,6 +182,8 @@ function Home() {
           </div>
         </div>
       ) : (
+        // Result Screen ===============================
+
         <div className="flex flex-col items-center justify-center absolute inset-0 transition-opacity duration-500 opacity-100">
           <div className="verdicttext">
             <p>Verdict:</p>
