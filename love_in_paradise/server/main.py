@@ -21,7 +21,7 @@ news = "All persons who received a COVID-19 vaccine may develop diseases such as
 nlp = spacy.load("en_core_web_sm")
 
 
-def love_in_paradise(claim, use_llm=False):
+def love_in_paradise(claim, use_llm=False) -> dict:
     time_overall = time()
     # Take claim input
     claim_input = claim
@@ -48,10 +48,12 @@ def love_in_paradise(claim, use_llm=False):
             )
         else:
             print("Input is not considered a news claim!")
-            return "Input is not considered a news claim!"
+            return {"justification": "Input is not considered a news claim!"}
     except Exception as e:
         print((f"News claim has missing some missing key elements: {e}"))
-        return f"News claim has missing some missing key elements: {e}"
+        return {
+            "justification": f"News claim has missing some missing key elements: {e}"
+        }
 
     # Classify input if it is verifiable or not
 
@@ -153,8 +155,8 @@ def love_in_paradise(claim, use_llm=False):
                     relevant_evidence.append(" ".join(tri))
         # print(f"evidences: {relevant_evidence}")
 
-        if subjects == [] and relevant_evidence == []:
-            return "This news claim seems to be low on information"
+        if subjects == [] or relevant_evidence == []:
+            return {"justification": "This news claim seems to be low on information"}
         else:
             alignments = evidence_alignment.calculate_entailment(
                 claim_input, relevant_evidence
@@ -176,7 +178,7 @@ def love_in_paradise(claim, use_llm=False):
             print(evidence_count)
             print(evidence_values)
     except Exception as e:
-        return f"Error in algo here: {e}"
+        return {"justification": f"Error in algo here: {e}"}
 
     # AGGREGATION
     # ===============================================================
@@ -228,9 +230,9 @@ def love_in_paradise(claim, use_llm=False):
     # for url, data in relevant_sentences.items():
     #     print(f"{url[:-10]}...:", data)
 
-    print("==============================")
-    print("LLM Response:")
     if use_llm:
+        print("==============================")
+        print("LLM Response:")
         fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
         agent_response = fca.verify()
         if agent_response:
@@ -242,7 +244,10 @@ def love_in_paradise(claim, use_llm=False):
             print(agent_result)
         return agent_result["verdict"]
 
-    return verdict
+    return {
+        "verdict": verdict,
+        "justification": "just here",
+    }
 
     # durations.append(time() - time_overall)
 
