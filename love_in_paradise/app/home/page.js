@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 
 function Home() {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState({});
   const [news, setNews] = useState("");
   const [placeholder, setPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,14 +79,16 @@ function Home() {
         .then((data) => {
           // Display verdict
           setLoading(false);
-          setMessage(data.message);
+          setMessage(data);
           setIsVerdictTrue(true);
           setShowVerdict(true);
         })
         .catch((error) => {
           console.error("Error fetching data:", error);
           setLoading(false);
-          setMessage("An error occurred. Please try again.");
+          setMessage({
+            justification: "An error occurred. Please try again.",
+          });
         });
     }, 1500); // 1.5 second timeout
   };
@@ -94,37 +96,37 @@ function Home() {
   const handleTryAgain = () => {
     setShowVerdict(false);
     setNews("");
-    setMessage("");
+    setMessage({});
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative">
       <style>
         {`
-                @keyframes hop {
-                    0%, 100% {
-                        transform: translateY(0);
-                    }
-                    50% {
-                        transform: translateY(-10px);
-                    }
-                }
-                .dot {
-                    background: linear-gradient(to right, #ff6e7f, #bfe9ff);
-                }
-                .dot-animation {
-                    animation: hop 0.6s infinite;
-                }
-                .dot-animation-1 {
-                    animation-delay: 0s;
-                }
-                .dot-animation-2 {
-                    animation-delay: 0.1s;
-                }
-                .dot-animation-3 {
-                    animation-delay: 0.2s;
-                }
-                `}
+          @keyframes hop {
+              0%, 100% {
+                  transform: translateY(0);
+              }
+              50% {
+                  transform: translateY(-10px);
+              }
+          }
+          .dot {
+              background: linear-gradient(to right, #ff6e7f, #bfe9ff);
+          }
+          .dot-animation {
+              animation: hop 0.6s infinite;
+          }
+          .dot-animation-1 {
+              animation-delay: 0s;
+          }
+          .dot-animation-2 {
+              animation-delay: 0.1s;
+          }
+          .dot-animation-3 {
+              animation-delay: 0.2s;
+          }
+          `}
       </style>
 
       {loading && (
@@ -166,7 +168,7 @@ function Home() {
 
             {news.trim() !== "" && (
               <button
-                className="absolute bottom-3 right-3 px-3 py-1 border rounded text-sm bg-black border border-white-500 text-white hover:bg-white hover:text-black transition"
+                className="absolute bottom-3 right-3 px-3 py-1 border rounded text-sm bg-black border-white-500 text-white hover:bg-white hover:text-black transition"
                 onClick={handleSubmit}
               >
                 Submit
@@ -189,10 +191,10 @@ function Home() {
             <p>Verdict:</p>
           </div>
           <div className="bigtext">
-            <p>True</p>
+            <p>{message.verdict ?? "No Verdict"}</p>
           </div>
-          <div className="mt-4 text-center text-lg text-gray-800">
-            {message}
+          <div className="mt-4 text-center text-lg text-gray-400">
+            {message.justification}
           </div>
           <button
             onClick={handleTryAgain}
