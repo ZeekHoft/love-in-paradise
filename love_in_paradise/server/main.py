@@ -9,19 +9,40 @@ from llm.fact_checker_agent import FactCheckerAgent
 from clasification.check import classify_input
 from analysis.utils import generate_graph
 
+from typing import Generator
 from time import time
 import spacy
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
 durations = []
-# news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
 # news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
-news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
+# news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
 nlp = spacy.load("en_core_web_sm")
 
 
-def love_in_paradise(claim, use_llm=False) -> dict:
+def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
+    """
+    Algorithm for verifying if a claim is true or not using online sources.
+
+    This is a generator that yields a dictionary containing its current process
+    until the whole algorithm is finished.
+    """
+
+    # Data to return to server
+    results = {
+        "verdict": None,
+        "justification": None,
+        "confidence": None,
+        # "sources": [],
+        "currentProcess": None,
+        "progress": 0.0,
+    }
+
+    results["currentProcess"] = "Checking if claim is verifiable"
+    yield results
+
     time_overall = time()
     # Take claim input
     claim_input = claim
@@ -36,6 +57,10 @@ def love_in_paradise(claim, use_llm=False) -> dict:
     try:
         input_classification = classify_input(claim_input)
         if input_classification in ACCEPT_LIST:
+
+            results["currentProcess"] = "Searching the web"
+            yield results
+
             print(f"Input is a {input_classification}; proceeding to tokenization.")
             search_query = " ".join(
                 tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
@@ -48,12 +73,16 @@ def love_in_paradise(claim, use_llm=False) -> dict:
             )
         else:
             print("Input is not considered a news claim!")
-            return {"justification": "Input is not considered a news claim!"}
+            results["justification"] = "Input is not considered a news claim!"
+            yield results
+            return
     except Exception as e:
         print((f"News claim has missing some missing key elements: {e}"))
-        return {
-            "justification": f"News claim has missing some missing key elements: {e}"
-        }
+        results["justification"] = (
+            f"News claim has missing some missing key elements: {e}"
+        )
+        yield results
+        return
 
     # Classify input if it is verifiable or not
 
@@ -68,6 +97,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
     time_section = time()
 
     durations.append(time() - time_section)
+
+    results["currentProcess"] = "Retrieving data from articles"
+    yield results
 
     # Scrape each article
     time_section = time()
@@ -87,6 +119,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
         print(data["headline"])
         # print(data["content"])
         # return data["content"]
+
+    results["currentProcess"] = "Searching for relevant information"
+    yield results
 
     # SEMANTIC SENTENCE SEARCH
     # Filtering out the most relevant data
@@ -111,6 +146,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
         print()
     durations.append(time() - time_section)
 
+    results["currentProcess"] = "Extracting information"
+    yield results
+
     # Information Extraction
     # ===============================================================
     try:
@@ -134,6 +172,10 @@ def love_in_paradise(claim, use_llm=False) -> dict:
         claim_triple = info_ext.generate_triples(claim_input)
 
         # generate_graph(only_triples)
+
+        results["currentProcess"] = "Comparing evidence to claim"
+        yield results
+
         # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
         # ===============================================================
         # Given a list of the most relevant sentences from articles, evaluate them against the claim
@@ -156,7 +198,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
         # print(f"evidences: {relevant_evidence}")
 
         if subjects == [] or relevant_evidence == []:
-            return {"justification": "This news claim seems to be low on information"}
+            results["justification"] = "This news claim seems to be low on information"
+            yield results
+            return
         else:
             alignments = evidence_alignment.calculate_entailment(
                 claim_input, relevant_evidence
@@ -178,7 +222,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
             print(evidence_count)
             print(evidence_values)
     except Exception as e:
-        return {"justification": f"Error in algo here: {e}"}
+        results["justification"] = f"Error in algo here: {e}"
+        yield results
+        return
 
     # AGGREGATION
     # ===============================================================
@@ -187,6 +233,9 @@ def love_in_paradise(claim, use_llm=False) -> dict:
     # Divisive, 50-50 agree/disagree: Unsure, Need more information
     # Few disagree-ing confidence: low confidence, -> Likely False
     # More disagree-ing confidence: high confidence, -> False
+
+    results["currentProcess"] = "Finalizing score"
+    yield results
 
     entailment = evidence_values["entailment"]
     contradiction = evidence_values["contradiction"]
@@ -242,12 +291,17 @@ def love_in_paradise(claim, use_llm=False) -> dict:
                 "justification": agent_response[1],
             }
             print(agent_result)
-        return agent_result["verdict"]
+            results["verdict"] = agent_result["verdict"]
+            results["justification"] = agent_result["justification"]
+            results["currentProcess"] = "Complete"
+            yield results
+            return
 
-    return {
-        "verdict": verdict,
-        "justification": "just here",
-    }
+    results["verdict"] = verdict
+    results["justification"] = "No justification yet"
+    results["currentProcess"] = "Complete"
+    yield results
+    return
 
     # durations.append(time() - time_overall)
 
@@ -262,24 +316,30 @@ def display_time():
 
 
 # if __name__ == "__main__":
-    # claims = [
-    #     "A new disease called chikungunya is spreading in China.",
-    #     "Three million Filipinos were cured by a non-surgical arthritis treatment, certified and endorsed by the Department of Health (DOH) and the Philippine Orthopedic Center (POC)",
-    #     "The Pantawid Pamilyang Pilipino Program (4Ps) is being removed, with the last payout being in August 2025.",
-    #     "Marcos slams Kennon Road rockshed, calls it ‘economic sabotage’",
-    #     "Ukraine drone attacks spark fires at Russia’s Kursk nuclear plant, Novatek’s Ust-Luga terminal",
-    #     "Most flood control contracts in Ilagan City, Isabela went to mayor’s brother",
-    #     "local duck becomes mayor",
-    # ]
-    # results = []
-    # # for claim in claims:
-    # #     claim_result = love_in_paradise(claim)
-    # #     if claim_result:
-    # #         results.append(claim_result)
-    # results.append(love_in_paradise(claims[6]))
-    # for result in results:
-    #     print(f"Claim: {result["claim"]}")
-    #     print(f"Verdict: {result["verdict"]}")
-    #     print(f"Justification: {result["justification"]}")
-# print(love_in_paradise(news))
-    # display_time()
+# claims = [
+#     "A new disease called chikungunya is spreading in China.",
+#     "Three million Filipinos were cured by a non-surgical arthritis treatment, certified and endorsed by the Department of Health (DOH) and the Philippine Orthopedic Center (POC)",
+#     "The Pantawid Pamilyang Pilipino Program (4Ps) is being removed, with the last payout being in August 2025.",
+#     "Marcos slams Kennon Road rockshed, calls it ‘economic sabotage’",
+#     "Ukraine drone attacks spark fires at Russia’s Kursk nuclear plant, Novatek’s Ust-Luga terminal",
+#     "Most flood control contracts in Ilagan City, Isabela went to mayor’s brother",
+#     "local duck becomes mayor",
+# ]
+# results = []
+# # for claim in claims:
+# #     claim_result = love_in_paradise(claim)
+# #     if claim_result:
+# #         results.append(claim_result)
+# results.append(love_in_paradise(claims[6]))
+# for result in results:
+#     print(f"Claim: {result["claim"]}")
+#     print(f"Verdict: {result["verdict"]}")
+#     print(f"Justification: {result["justification"]}")
+# print(love_in_paradise(news, use_llm=False))
+# display_time()
+
+
+# New way to run code:
+# lip = love_in_paradise(news)
+# for result in lip:
+#     print(result)
