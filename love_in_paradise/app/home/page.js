@@ -73,24 +73,62 @@ function Home() {
       return response.json();
     };
 
-    setTimeout(() => {
-      // Make post request here
-      postData("http://localhost:8080/api/home", { name: news })
-        .then((data) => {
-          // Display verdict
-          setLoading(false);
-          setMessage(data);
-          setIsVerdictTrue(true);
-          setShowVerdict(true);
-        })
-        .catch((error) => {
-          console.error("Error fetching data:", error);
-          setLoading(false);
-          setMessage({
-            justification: "An error occurred. Please try again.",
-          });
+    // OLD CODE
+    // setTimeout(() => {
+    //   // Make post request here
+    //   postData("http://localhost:8080/api/home", { name: news })
+    //     .then((data) => {
+    //       // Display verdict
+    //       setLoading(false);
+    //       setMessage(data);
+    //       setIsVerdictTrue(true);
+    //       setShowVerdict(true);
+    //     })
+    //     .catch((error) => {
+    //       console.error("Error fetching data:", error);
+    //       setLoading(false);
+    //       setMessage({
+    //         justification: "An error occurred. Please try again.",
+    //       });
+    //     });
+    // }, 1500); // 1.5 second timeout
+
+    async function readStream(url = "", data = {}) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
         });
-    }, 1500); // 1.5 second timeout
+
+        const reader = response.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            // End of stream
+            // Display verdict
+            setLoading(false);
+            setIsVerdictTrue(true);
+            setShowVerdict(true);
+            break;
+          }
+          // Convert chunk into json that can be used
+          const decoder = new TextDecoder("utf-8");
+          const latestMessage = JSON.parse(decoder.decode(value));
+          setMessage(latestMessage);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+        setMessage({
+          justification: "An error occurred. Please try again.",
+        });
+      }
+    }
+
+    readStream("http://localhost:8080/api/home", { name: news });
   };
 
   const handleTryAgain = () => {
@@ -132,11 +170,16 @@ function Home() {
       {loading && (
         //  Loading Screen ==============================
 
-        <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
-          <div className="flex space-x-2">
-            <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-1"></div>
-            <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-2"></div>
-            <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-3"></div>
+        <div className="flex flex-col items-center justify-center absolute inset-0 transition-opacity duration-500 opacity-100">
+          <div className="bigtext2 transition-all">
+            <p>{message.currentProcess ?? "Processing"}</p>
+          </div>
+          <div className="inset-0 flex items-center justify-center bg-transparent z-10">
+            <div className="flex space-x-2">
+              <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-1"></div>
+              <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-2"></div>
+              <div className="w-4 h-4 rounded-full dot dot-animation dot-animation-3"></div>
+            </div>
           </div>
         </div>
       )}
@@ -185,6 +228,7 @@ function Home() {
         </div>
       ) : (
         // Result Screen ===============================
+        // TODO: Display confidence level and list of sources
 
         <div className="flex flex-col items-center justify-center absolute inset-0 transition-opacity duration-500 opacity-100">
           <div className="verdicttext">
