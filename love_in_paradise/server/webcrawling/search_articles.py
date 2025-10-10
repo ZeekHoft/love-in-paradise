@@ -1,16 +1,15 @@
 import requests
+from dotenv import load_dotenv
 import os
 
-api_file_path = os.path.join(os.path.dirname(__file__), "API_KEY")
-sei_file_path = os.path.join(os.path.dirname(__file__), "SEARCH_ENGINE_ID")
-
 try:
-    with open(api_file_path, "r") as f:
-        API_KEY = f.read().strip()
-    with open(sei_file_path, "r") as f:
-        SEARCH_ENGINE_ID = f.read().strip()
-except FileNotFoundError as e:
-    print(f"file not found: {e}")
+    load_dotenv()
+    API_KEY = os.getenv("GOOGLE_API_KEY")
+    SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+    if API_KEY is None or SEARCH_ENGINE_ID is None:
+        raise ValueError("API keys were not found")
+except Exception as e:
+    print(f"Error Loading API keys: {e}")
 
 
 URL = "https://www.googleapis.com/customsearch/v1"

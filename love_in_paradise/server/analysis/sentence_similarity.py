@@ -22,7 +22,7 @@ class SentenceSimilarity:
 
         # Separate content into list of sentences
         doc = self.nlp(content)
-        tokenized_sentences = [sent.text for sent in doc.sents]
+        tokenized_sentences = [sent.text.strip() for sent in doc.sents]
 
         # Encode sentences
         ts_encoding = self.model.encode(tokenized_sentences)
