@@ -34,7 +34,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         "verdict": None,
         "justification": None,
         "confidence": None,
-        # "sources": [],
+        "sources": [],
         "currentProcess": None,
         "progress": 0.0,
     }
@@ -265,23 +265,23 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
         agent_response = fca.verify()
         if agent_response:
-            agent_result = {
-                "claim": claim_input,
-                "verdict": agent_response[0],
-                "justification": agent_response[1],
-            }
-            print(agent_result)
-            results["verdict"] = agent_result["verdict"]
-            results["justification"] = agent_result["justification"]
-            results["currentProcess"] = "Complete"
-            results["progress"] = 8 / 8
+            results["verdict"] = agent_response[0]
+            results["justification"] = agent_response[1]
+            results["sources"] = list(relevant_sentences.keys())
+        else:
+            # No data from LLM API
+            results["justification"] = "Error: No response from LLM"
             yield results
             return
 
-    results["verdict"] = verdict
-    results["justification"] = "No justification yet"
+    else:
+        # Manual method
+        results["verdict"] = verdict
+        results["justification"] = "No justification yet"
+        results["confidence"] = confidence
+        results["sources"] = list(triples.keys())
+
     results["currentProcess"] = "Complete"
-    results["confidence"] = confidence
     results["progress"] = 8 / 8
     yield results
     return
