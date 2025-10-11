@@ -34,12 +34,13 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         "verdict": None,
         "justification": None,
         "confidence": None,
-        # "sources": [],
+        "sources": [],
         "currentProcess": None,
         "progress": 0.0,
     }
 
     results["currentProcess"] = "Checking if claim is verifiable"
+    results["progress"] = 1 / 8
     yield results
 
     # Take claim input
@@ -57,6 +58,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         if input_classification in ACCEPT_LIST:
 
             results["currentProcess"] = "Searching the web"
+            results["progress"] = 2 / 8
             yield results
 
             print(f"Input is a {input_classification}; proceeding to tokenization.")
@@ -85,6 +87,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         return
 
     results["currentProcess"] = "Retrieving data from articles"
+    results["progress"] = 3 / 8
     yield results
 
     # Scrape each article
@@ -98,11 +101,13 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     print("Scraped Articles ==================================")
     for url, data in news_data.items():
+        print(url)
         print(data["headline"])
         # print(data["content"])
         # return data["content"]
 
     results["currentProcess"] = "Searching for relevant information"
+    results["progress"] = 4 / 8
     yield results
 
     # SEMANTIC SENTENCE SEARCH
@@ -127,6 +132,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         print()
 
     results["currentProcess"] = "Extracting information"
+    results["progress"] = 5 / 8
     yield results
 
     # Information Extraction
@@ -154,6 +160,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         # generate_graph(only_triples)
 
         results["currentProcess"] = "Comparing evidence to claim"
+        results["progress"] = 6 / 8
         yield results
 
         # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
@@ -215,6 +222,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # More disagree-ing confidence: high confidence, -> False
 
     results["currentProcess"] = "Finalizing score"
+    results["progress"] = 7 / 8
     yield results
 
     entailment = evidence_values["entailment"]
@@ -257,22 +265,24 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
         agent_response = fca.verify()
         if agent_response:
-            agent_result = {
-                "claim": claim_input,
-                "verdict": agent_response[0],
-                "justification": agent_response[1],
-            }
-            print(agent_result)
-            results["verdict"] = agent_result["verdict"]
-            results["justification"] = agent_result["justification"]
-            results["currentProcess"] = "Complete"
+            results["verdict"] = agent_response[0]
+            results["justification"] = agent_response[1]
+            results["sources"] = list(relevant_sentences.keys())
+        else:
+            # No data from LLM API
+            results["justification"] = "Error: No response from LLM"
             yield results
             return
 
-    results["verdict"] = verdict
-    results["justification"] = "No justification yet"
+    else:
+        # Manual method
+        results["verdict"] = verdict
+        results["justification"] = "No justification yet"
+        results["confidence"] = confidence
+        results["sources"] = list(triples.keys())
+
     results["currentProcess"] = "Complete"
-    results["confidence"] = confidence
+    results["progress"] = 8 / 8
     yield results
     return
 

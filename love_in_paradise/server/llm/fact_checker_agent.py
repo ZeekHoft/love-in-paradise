@@ -72,20 +72,40 @@ class FactCheckerAgent:
                             "content": self.user_prompt,
                         },
                     ],
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "factcheck",
+                            "strict": True,
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "verdict": {
+                                        "type": "string",
+                                        "description": "Conclusion of fact check",
+                                    },
+                                    "justification": {
+                                        "type": "string",
+                                        "description": "Explanation of how verdict was chosen",
+                                    },
+                                },
+                                "required": ["verdict", "justification"],
+                                "additionalProperties": False,
+                            },
+                        },
+                    },
                 }
             ),
         )
         if response.status_code == 200:
             try:
                 data = response.json()["choices"][0]["message"]
-                vnj = json.loads(data["content"])
-            except:
-                print("Error: Data not found")
+                llm_response = json.loads(data["content"])
+            except Exception as e:
+                print(f"Error Data not found: {e}")
                 print(json.dumps(response.json(), indent=2))
                 return
-            # print(f"Verdict: {vnj["verdict"]} \n")
-            # print(f"Justification: {vnj["justification"]}")
-            return (vnj["verdict"], vnj["justification"])
+            return (llm_response["verdict"], llm_response["justification"])
         # print(json.dumps(response.json(), indent=2))
 
     def check_api(self):
