@@ -1,11 +1,12 @@
 from analysis.open_info_extraction import OpenInformationExtraction
 from analysis.sentence_similarity import SentenceSimilarity
 from analysis.evidence_alignment import EvidenceAlignment
-from webcrawling.search_articles import Search_articles
 from webcrawling.rappler_scraper import RapplerScraper
 from webcrawling.article_scraper import ArticleScraper
 from tokenization.english import Eng_Tokenization_NLP
 from llm.fact_checker_agent import FactCheckerAgent
+
+from webcrawling.search_articles import search_news
 from clasification.check import classify_input
 from analysis.utils import generate_graph
 
@@ -52,7 +53,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     print("Finished tokenization.")
 
     # Classify input if it is verifiable or not
-    webcrawler = Search_articles()
     try:
         input_classification = classify_input(claim_input)
         if input_classification in ACCEPT_LIST:
@@ -68,11 +68,11 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
             # Search articles/ Web crawling
             print("Search Terms: " + search_query + "\n")
-            articles = webcrawler.search_news(
+            articles = search_news(
                 search_query,
-                exclude_terms="opinion",
-                results_amt=5,
+                results_amt=30,
             )
+            # print(articles)
         else:
             print("Input is not considered a news claim!")
             results["justification"] = "Input is not considered a news claim!"
