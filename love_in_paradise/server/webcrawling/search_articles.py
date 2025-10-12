@@ -39,13 +39,31 @@ class Search_articles(object):
             "orTerms": or_terms,
         }
 
-        response = requests.get(url=URL, params=params)
-        results = response.json()
+        if results_amt > 100:
+            print("Search results can not be more than 100")
+            results_amt = 100
 
-        if "items" in results:
-            for result in results["items"]:
-                article_url = result["link"]
-                article_urls.append(article_url)
+        start = 1  # page 1, first (page 2 is 11)
+        num = 10 if results_amt > 10 else results_amt  # cap at 10
+
+        while results_amt > 0:
+            params["num"] = num
+            params["start"] = start
+            response = requests.get(url=URL, params=params)
+            results = response.json()
+
+            if "items" in results:
+                for result in results["items"]:
+                    print(result)
+                    article_url = result["link"]
+                    article_urls.append(article_url)
+            else:
+                print("no items in results")
+                break
+
+            results_amt -= num
+            start += 10
+            num = 10 if results_amt > 10 else results_amt
 
         return article_urls
 
