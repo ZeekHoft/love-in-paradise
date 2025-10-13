@@ -13,7 +13,7 @@ const nextConfig = {
     return [
       {
         source: "/api/(.*)",
-        destination: "/server/app.py",
+        destination: "/api/app.py",
       },
     ];
   },
