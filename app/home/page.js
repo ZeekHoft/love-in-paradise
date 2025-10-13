@@ -128,7 +128,7 @@ function Home() {
       }
     }
 
-    readStream("http://localhost:8080/api/home", { name: news });
+    readStream("/api/home", { name: news });
   };
 
   const handleTryAgain = () => {
