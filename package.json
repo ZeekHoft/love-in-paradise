@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "flask-dev": "set FLASK_DEBUG=1 && pip3 install -r requirements.txt && python -c \"import stanza;stanza.install_corenlp()\" && python -m flask --app api/app run --host=0.0.0.0 -p 8080",
-    "dev": "concurrently \"npm run next dev --turbopack\" \"npm run flask-dev",
+    "dev": "concurrently \"npm run next dev --turbopack\" \"npm run flask-dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
