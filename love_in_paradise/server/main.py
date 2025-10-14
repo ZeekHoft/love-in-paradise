@@ -135,6 +135,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     sentence_similarity = SentenceSimilarity(nlp)
     sentence_similarity.set_main_sentence(claim_input)
     relevant_sentences = {}
+    urls_to_remove = []
     for url, data in news_data.items():
         ss = sentence_similarity.find_similar_sentences(
             data["content"],
@@ -143,6 +144,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         print(data["headline"])
         if ss == []:
             print("No similar sentences found.")
+            urls_to_remove.append(url)
+
         else:
             print("SCORE | SENTENCE")
             for sentence, score in ss:
@@ -154,6 +157,14 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                     relevant_sentences[url].append(sentence)
                     news_data[url]["sentences"].append(sentence)
         print()
+
+    # Discard urls with no relevant sentences
+    for key_url in urls_to_remove:
+        print(f"Removed News: {news_data[key_url]["headline"]}")
+        news_data.pop(key_url)
+    print()
+
+    # relevant sentences is url: [sentences]
 
     results["currentProcess"] = "Extracting information"
     results["progress"] = 5 / 8
