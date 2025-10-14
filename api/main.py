@@ -15,7 +15,7 @@ import spacy
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
-news = "Vice President Sara Duterte stated that there is nothing wrong with sharing AI videos."
+news = "Earthquakes that are happening in the Philippines"
 # news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
 # news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
 nlp = spacy.load("en_core_web_sm")
@@ -100,9 +100,12 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # !! TODO: text processing of article content here !!
 
     print("Scraped Articles ==================================")
+    # print(type(news_data.items()))
     for url, data in news_data.items():
         print(url)
         print(data["headline"])
+        headline = data["headline"]
+        content = data["content"]
         # print(data["content"])
         # return data["content"]
 
