@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask import request
 import json
 
-from main import love_in_paradise
+from server.main import love_in_paradise
 
 
 def favorite_food():
