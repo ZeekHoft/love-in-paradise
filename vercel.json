@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "server/server.py": {
+    "server/app.py": {
       "runtime": "vercel-python@3.12"
     }
   },
