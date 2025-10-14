@@ -1,13 +1,19 @@
 {
   "functions": {
     "api/server.py": {
-      "runtime": "python3.12"
+      "runtime": "@vercel/python"
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/app.py"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/app.py"
     }
   ]
 }
