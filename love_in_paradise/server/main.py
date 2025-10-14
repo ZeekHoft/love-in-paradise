@@ -242,7 +242,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     print("Scoring each article")
     for article in news_data.values():
         score_article(claim=claim_input, article=article)
-    print("Done scoring")
+    print("Done scoring\n")
 
     print("SCORE | ARTICLE")
     agree = []
@@ -305,6 +305,21 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # - Top evidences
     # - Sources
 
+    justification = f"Verdict: {verdict} with a confidence level of {confidence:.0f}%\n"
+
+    if len(article_scores) > 3:
+        reverse = True if average_score > 0 else False
+        top3 = sorted(article_scores, reverse=reverse)[:3]
+        listcount = 1
+        justification += "Here are the top evidences that support the verdict\n"
+        for article in news_data.values():
+            if article["score"] in top3:
+                justification += (
+                    f"{listcount}. {article["headline"]} ({article["link"]})\n"
+                    + f"Evidence: {article["evidence"]}\n"
+                )
+                listcount += 1
+
     if use_llm:
         print("==============================")
         print("LLM Response:")
@@ -323,7 +338,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     else:
         # Manual method
         results["verdict"] = verdict
-        results["justification"] = "No justification yet"
+        results["justification"] = justification
         results["confidence"] = confidence
         results["sources"] = list(triples.keys())
 
@@ -354,7 +369,10 @@ def score_article(claim: str, article: dict):
         "entailment": 0,
         "contradiction": 0,
     }
+    top_score = max([abs(x[1]) for x in alignments])
     for label, score in alignments:
+        if score == abs(top_score):
+            article["evidence"] = sentences[alignments.index((label, score))]
         evidence_count[label] += 1
         evidence_values[label] += score.item()
 
