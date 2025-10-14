@@ -4,17 +4,24 @@ import os
 """
 import stanza
 stanza.install_corenlp()
+
+OR 
+
+python -c "import stanza;stanza.install_corenlp()"
 """
 
 # Get the relative filepath of property file
 # Should be forward slash instead of backslash provided by os.path
-props_filepath = os.path.relpath(os.path.join(os.path.dirname(__file__), "corenlp.props")).replace("\\", "/")
+props_filepath = os.path.relpath(
+    os.path.join(os.path.dirname(__file__), "corenlp.props")
+).replace("\\", "/")
 
 
 class OpenInformationExtraction:
     """
     Uses Stanza/Stanford OpenIE for extracting relations from text sentences.
     """
+
     nlp_client = None
 
     def __init__(self):
@@ -34,7 +41,7 @@ class OpenInformationExtraction:
                 # print("|-", triple)
                 triples.append(triple)
         return triples
-    
+
     def dispose(self):
         if self.nlp_client is not None:
             self.nlp_client.stop()
