@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "server/app.py": {
-      "runtime": "vercel-python@3.12"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
