@@ -30,13 +30,14 @@ class ArticleScraper:
                 links_data[url] = {
                     "headline": url_i.title,
                     "content": url_i.text,
+                    "link": url,
                 }
 
             return links_data
             # return "\n".join(article_content)
         except Exception as e:
-            return f"Error scraping article: {e}"
-
+            print(f"Error scraping article: {e}")
+            return {}
 
 
 # news = ArticleScraper()
