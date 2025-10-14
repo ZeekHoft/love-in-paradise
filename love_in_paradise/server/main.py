@@ -70,8 +70,15 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             print("Search Terms: " + search_query + "\n")
             articles = search_news(
                 search_query,
-                results_amt=30,
+                results_amt=20,
             )
+            if len(articles) == 0:
+                print("No news articles found related to news claim.")
+                results["justification"] = (
+                    "No news articles found related to news claim."
+                )
+                yield results
+                return
             # print(articles)
         else:
             print("Input is not considered a news claim!")
