@@ -139,7 +139,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     for url, data in news_data.items():
         ss = sentence_similarity.find_similar_sentences(
             data["content"],
-            cutoff_score=0.35,
+            cutoff_score=0.50,
         )
         print(data["headline"])
         if ss == []:
