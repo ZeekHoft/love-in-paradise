@@ -12,6 +12,7 @@ from analysis.utils import generate_graph
 
 from typing import Generator
 from time import time
+import numpy as np
 import spacy
 
 
@@ -241,7 +242,12 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     print("Scoring each article")
     for article in news_data.values():
-        score_article(claim=claim_input, article=article)
+        score_article(
+            claim=claim_input,
+            article=article,
+            oie=info_ext,
+            claim_triples=claim_triples,
+        )
     print("Done scoring\n")
 
     print("SCORE | ARTICLE")
@@ -350,17 +356,28 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     return
 
 
-def score_article(claim: str, article: dict):
+def score_article(
+    claim: str, article: dict, oie: OpenInformationExtraction, claim_triples: list
+):
     """
     Score an article based on claim
     """
     sentences = article["sentences"]
 
-    # Compare with all sentences in article
-    # doc = nlp(article["content"])
-    # tokenized_sentences = [sent.text.strip() for sent in doc.sents]
+    # Triple comparison with claim
+    common_count = 0
+    for sentence in sentences:
+        article_triples = oie.generate_triples(sentence)
+        if article_triples:
+            common = set(article_triples).intersection(set(claim_triples))
+            common_count += len(common)
+
+    if common_count != 0:
+        print("Common triples found:", common_count)
 
     alignments = calculate_entailment(claim=claim, sentences=sentences)
+    article["alignments"] = alignments
+
     evidence_count = {
         "neutral": 0,
         "entailment": 0,
@@ -371,27 +388,17 @@ def score_article(claim: str, article: dict):
         "entailment": 0,
         "contradiction": 0,
     }
-    top_score = max([abs(x[1]) for x in alignments])
-    for label, score in alignments:
-        if score == abs(top_score):
-            article["evidence"] = sentences[alignments.index((label, score))]
-        evidence_count[label] += 1
-        evidence_values[label] += score.item()
 
-    entailment = evidence_values["entailment"]
+    for alignment in alignments:
+        label = alignment["label"]
+        evidence_count[label] += 1
+        evidence_values[label] += alignment["score"]
+
+    entailment = evidence_values["entailment"] + common_count
     contradiction = evidence_values["contradiction"]
 
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)
-    # print("Article:", article["headline"])
-    # if entailment != 0 or contradiction != 0:
-    #     percentage = (entailment / (entailment + contradiction)) * 100
-    #     print(
-    #         f"Entailment: {entailment:.2f}, Contradiction: {contradiction:.2f}, Agree: {percentage:.0f}%, Score: {score:.2f}"
-    #     )
-    # else:
-    #     print("no score (not enough evidence)")
-    # print()
     article["score"] = score
 
 
