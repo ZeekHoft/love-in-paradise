@@ -1,3 +1,4 @@
+import re
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 
@@ -22,7 +23,10 @@ class SentenceSimilarity:
 
         # Separate content into list of sentences
         doc = self.nlp(content)
-        tokenized_sentences = [sent.text.strip() for sent in doc.sents]
+        tokenized_sentences = []
+        for sent in doc.sents:
+            sentences_found = re.split(r"\n+", sent.text)
+            tokenized_sentences += [s for s in sentences_found if s != ""]
 
         # Encode sentences
         ts_encoding = self.model.encode(tokenized_sentences)
