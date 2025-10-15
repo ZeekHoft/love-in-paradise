@@ -20,11 +20,13 @@ def handle_post_request():
     data = request.get_json()
     if data:
         name = data.get("name")
+        use_llm = data.get("useLLM")
+        print(name, use_llm)
         return Response(
             stream_with_context(
                 # Convert to string ending with newline
                 json.dumps(result) + "\n"
-                for result in love_in_paradise(name)
+                for result in love_in_paradise(name, use_llm=use_llm)
             ),
             mimetype="application/x-ndjson",
         )
