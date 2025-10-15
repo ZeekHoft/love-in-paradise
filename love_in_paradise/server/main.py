@@ -276,15 +276,14 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     else:
         # Manual creation of justification based on fixed template
-        justification = f"According to the algorithm, the claim is evaluated to be {verdict} with a confidence level of {confidence:.0f}%\n"
-
-        if len(article_scores) > 3:
+        if len(article_scores) >= 3:
             # Get top 3 articles in support of verdict
             reverse = True if average_score > 0 else False
             top3 = sorted(article_scores, reverse=reverse)[:3]
             listcount = 1
-            justification += (
-                "Here are the top news articles that are in support of the verdict\n"
+            justification = (
+                "The verdict was evaluated based on the following news articles:\n"
+                + "(Listed based on relevance)\n"
             )
             for article in news_data.values():
                 if article["score"] in top3:
@@ -303,12 +302,14 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                     # Get an article's top evidence
                     evidence = max(alignments, key=lambda x: x["score"])
                     justification += (
-                        f"{listcount}. {article['headline']} ({article['link']})\n"
+                        f"{listcount}. {article['headline']}\n"
                         + f"Evidence: {evidence['sentence']}\n"
                     )
                     listcount += 1
         else:
-            justification = "This claim needs more information."
+            justification = (
+                "Less than 3 articles were found. This claim needs more information."
+            )
 
         results["verdict"] = verdict
         results["justification"] = justification
