@@ -235,9 +235,12 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     confidence = max(0, min(100, confidence))
     print(f"Confidence Level: {confidence:.1f}%")
 
-    # Verdict Assigment
+    # AGGREGATION OF VERDICT AND JUSTIFICATION
+    # ===============================================================
+    # Decide verdict based on average score
     THRESHOLD1 = 0.3
     THRESHOLD2 = 0.45
+
     if -THRESHOLD1 < average_score < THRESHOLD1:
         verdict = "UNSURE"
     elif average_score <= -THRESHOLD2:
@@ -250,16 +253,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         verdict = "LIKELY TRUE"
 
     # JUSTIFICATION GENERATION
-    # ===============================================================
-    # Uses a template sentence for making a justification
-    # Some things to display:
-    # - Verdict
-    # - Justification
-    # - Top evidences
-    # - Sources
-
-    # LLM Generated justification and verdict
     if use_llm:
+        # Use LLM agent
         print("==============================")
         print("LLM Response:")
         fca = FactCheckerAgent(claim=claim_input, knowledge=str(news_data))
@@ -269,42 +264,47 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             results["justification"] = agent_response[1]
             results["confidence"] = 0
         else:
-            # No data from LLM API
             results["justification"] = "Error: No response from LLM"
             yield results
             return
-
     else:
-        # Manual creation of justification based on fixed template
+        # Manual justification based on top articles
+        justification = ""
         if len(article_scores) >= 3:
             # Get top 3 articles in support of verdict
-            reverse = True if average_score > 0 else False
-            top3 = sorted(article_scores, reverse=reverse)[:3]
-            listcount = 1
-            justification = (
+            reverse = average_score > 0
+            top3_scores = sorted(article_scores, reverse=reverse)[:3]
+
+            justification += (
                 "The verdict was evaluated based on the following news articles:\n"
                 + "(Listed based on relevance)\n"
             )
+
+            listcount = 1
             for article in news_data.values():
-                if article["score"] in top3:
+                if article["score"] in top3_scores:
+                    # Filter alignments based on verdict type
                     if average_score > 0:
                         alignments = [
-                            a
-                            for a in article["alignments"]
-                            if a["label"] == "entailment"
+                            a for a in article.get("alignments", []) if a["label"] == "entailment"
                         ]
                     else:
                         alignments = [
-                            a
-                            for a in article["alignments"]
-                            if a["label"] == "contradiction"
+                            a for a in article.get("alignments", []) if a["label"] == "contradiction"
                         ]
-                    # Get an article's top evidence
-                    evidence = max(alignments, key=lambda x: x["score"])
-                    justification += (
-                        f"{listcount}. {article['headline']}\n"
-                        + f"Evidence: {evidence['sentence']}\n"
-                    )
+
+                    if alignments:
+                        evidence = max(alignments, key=lambda x: x["score"])
+                        justification += (
+                            f"{listcount}. {article['headline']}\n"
+                            + f"Evidence: {evidence['sentence']}\n"
+                        )
+                    else:
+                        # Fallback if no strong evidence
+                        justification += (
+                            f"{listcount}. {article['headline']}\n"
+                            + "Evidence: No strong evidence found\n"
+                        )
                     listcount += 1
         else:
             justification = (
@@ -315,6 +315,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         results["justification"] = justification
         results["confidence"] = confidence
 
+    # Always include article URLs and headlines
     results["article_urls"] = list(news_data.keys())
     results["headlines"] = {
         key: value["headline"].replace('"', "'") for key, value in news_data.items()
@@ -323,7 +324,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     results["currentProcess"] = "Complete"
     results["progress"] = 8 / 8
     yield results
-    return
+
 
 
 def score_article(
