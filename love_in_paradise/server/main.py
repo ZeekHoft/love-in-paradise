@@ -1,6 +1,5 @@
 from analysis.open_info_extraction import OpenInformationExtraction
 from analysis.sentence_similarity import SentenceSimilarity
-from webcrawling.rappler_scraper import RapplerScraper
 from webcrawling.article_scraper import ArticleScraper
 from tokenization.english import Eng_Tokenization_NLP
 from llm.fact_checker_agent import FactCheckerAgent
@@ -8,10 +7,8 @@ from llm.fact_checker_agent import FactCheckerAgent
 from analysis.evidence_alignment import calculate_entailment
 from webcrawling.search_articles import search_news
 from clasification.check import classify_input
-from analysis.utils import generate_graph
 
 from typing import Generator
-from time import time
 import numpy as np
 import spacy
 
