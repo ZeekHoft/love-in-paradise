@@ -1,0 +1,7 @@
+openie.resolve_coref=True
+
+annotators = tokenize,ssplit,pos,lemma,depparse,natlog,ner,coref,openie
+
+outputFormat=serialized
+
+be_quiet=True
