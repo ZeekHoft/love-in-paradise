@@ -99,9 +99,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     yield results
 
     # Scrape each article
-    # rappler_scraper = RapplerScraper()
-    # news_data = rappler_scraper.scrape_urls(articles)
-
     articleScraper = ArticleScraper()
     news_data = articleScraper.article_scraper(articles)
     if len(news_data) == 0:
@@ -119,14 +116,10 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     }
     """
 
-    # !! TODO: text processing of article content here !!
-
     print("Scraped Articles ==================================")
     for url, data in news_data.items():
         print(url)
         print(data["headline"])
-        # print(data["content"])
-        # return data["content"]
 
     results["currentProcess"] = "Searching for relevant information"
     results["progress"] = 4 / 8
@@ -167,80 +160,21 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         news_data.pop(key_url)
     print()
 
-    # relevant sentences is url: [sentences]
-
-    results["currentProcess"] = "Extracting information"
-    results["progress"] = 5 / 8
-    yield results
-
     # Information Extraction
     # ===============================================================
     # Gets subject, predicate, object triples
-    # try:
-    triples = {}  # triples separated by url
-    """
-    triples = {
-        url: [(triple), (triple)],
-    }
-    """
-    only_triples = []  # list of all triples for graph generation
     info_ext = OpenInformationExtraction()
-    for url, sentences in relevant_sentences.items():
-        url_triples = []
-        for sent in sentences:
-            gen_triples = info_ext.generate_triples(sent)
-            if gen_triples:
-                url_triples.extend(gen_triples)
-        if url_triples != []:
-            triples[url] = url_triples
-            only_triples.extend(url_triples)
-
     claim_triples = info_ext.generate_triples(claim_input)
     print(f"Claim triples: {claim_triples}")
 
-    # generate_graph(only_triples)
-
     results["currentProcess"] = "Comparing evidence to claim"
-    results["progress"] = 6 / 8
+    results["progress"] = 5 / 8
     yield results
 
     # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
     # ===============================================================
     # Given a list of the most relevant sentences from articles, evaluate them against the claim
     # -> evidences = {"agree", "disagree", "neutral"}
-
-    print("Matching triples...")
-    subjects = []
-    matching_triple_count = 0
-    for claim_triple in claim_triples:
-        subjects.append(claim_triple[0])
-        subjects.append(claim_triple[2])
-        for url in triples.keys():
-            for tripl in triples[url]:
-                if tripl == claim_triple:
-                    # print(f"Matching triple: {tripl} in {url}")
-                    matching_triple_count += 1
-    print(f"Total matching triples: {matching_triple_count}")
-
-    print("subjects: ", subjects)
-
-    # Convert triples that have claim subject into string
-    relevant_evidence = []
-    for source, url_triple in triples.items():
-        for tri in url_triple:
-            if list(set(subjects) & set(tri)):
-                # print(f"urls in tri: {tri}")
-                relevant_evidence.append(" ".join(tri))
-
-    if subjects == [] or relevant_evidence == []:
-        results["justification"] = "This news claim seems to be low on information"
-        yield results
-        # return
-
-    # except Exception as e:
-    #     results["justification"] = f"Error in algo here: {e}"
-    #     yield results
-    #     return
 
     print("Scoring each article")
     for article in news_data.values():
@@ -251,6 +185,10 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             claim_triples=claim_triples,
         )
     print("Done scoring\n")
+
+    results["currentProcess"] = "Aggregating Scores"
+    results["progress"] = 6 / 8
+    yield results
 
     print("SCORE | ARTICLE")
     agree = []
