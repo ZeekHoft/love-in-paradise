@@ -18,7 +18,7 @@ class SentenceSimilarity:
         self.ms_encoding = self.model.encode(main_sentence)
 
     # Searches for the most relevent/similar sentences using a base sentence
-    def find_similar_sentences(self, content):
+    def find_similar_sentences(self, content, cutoff_score=0.25):
 
         # Separate content into list of sentences
         doc = self.nlp(content)
@@ -42,7 +42,7 @@ class SentenceSimilarity:
         top_sentences = [
             (sentence, score)
             for sentence, score in sorted_score
-            if score >= CUTTOFF_SCORE
+            if score >= cutoff_score
         ]
 
         return top_sentences
