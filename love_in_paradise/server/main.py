@@ -178,6 +178,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     print("Scoring each article")
     for article in news_data.values():
+        # Score each article based on semantic entailment and matching triples
         score_article(
             claim=claim_input,
             article=article,
@@ -253,48 +254,23 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     # JUSTIFICATION GENERATION
     # ===============================================================
-    # Use a template sentence for justification
+    # Uses a template sentence for making a justification
     # Some things to display:
     # - Verdict
     # - Justification
     # - Top evidences
     # - Sources
 
-    justification = f"According to the algorithm, the claim is evaluated to be {verdict} with a confidence level of {confidence:.0f}%\n"
-
-    if len(article_scores) > 3:
-        reverse = True if average_score > 0 else False
-        top3 = sorted(article_scores, reverse=reverse)[:3]
-        listcount = 1
-        justification += "Here are the top evidences that are support of the verdict\n"
-        for article in news_data.values():
-            if article["score"] in top3:
-                if average_score > 0:
-                    alignments = [
-                        a for a in article["alignments"] if a["label"] == "entailment"
-                    ]
-                else:
-                    alignments = [
-                        a
-                        for a in article["alignments"]
-                        if a["label"] == "contradiction"
-                    ]
-                evidence = max(alignments, key=lambda x: x["score"])
-                justification += (
-                    f"{listcount}. {article['headline']} ({article['link']})\n"
-                    + f"Evidence: {evidence['sentence']}\n"
-                )
-                listcount += 1
-
+    # LLM Generated justification and verdict
     if use_llm:
         print("==============================")
         print("LLM Response:")
-        fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
+        fca = FactCheckerAgent(claim=claim_input, knowledge=str(news_data))
         agent_response = fca.verify()
         if agent_response:
             results["verdict"] = agent_response[0]
             results["justification"] = agent_response[1]
-            results["sources"] = list(relevant_sentences.keys())
+            results["confidence"] = 0
         else:
             # No data from LLM API
             results["justification"] = "Error: No response from LLM"
@@ -302,12 +278,46 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             return
 
     else:
-        # Manual method
+        # Manual creation of justification based on fixed template
+        justification = f"According to the algorithm, the claim is evaluated to be {verdict} with a confidence level of {confidence:.0f}%\n"
+
+        if len(article_scores) > 3:
+            # Get top 3 articles in support of verdict
+            reverse = True if average_score > 0 else False
+            top3 = sorted(article_scores, reverse=reverse)[:3]
+            listcount = 1
+            justification += (
+                "Here are the top news articles that are in support of the verdict\n"
+            )
+            for article in news_data.values():
+                if article["score"] in top3:
+                    if average_score > 0:
+                        alignments = [
+                            a
+                            for a in article["alignments"]
+                            if a["label"] == "entailment"
+                        ]
+                    else:
+                        alignments = [
+                            a
+                            for a in article["alignments"]
+                            if a["label"] == "contradiction"
+                        ]
+                    # Get an article's top evidence
+                    evidence = max(alignments, key=lambda x: x["score"])
+                    justification += (
+                        f"{listcount}. {article['headline']} ({article['link']})\n"
+                        + f"Evidence: {evidence['sentence']}\n"
+                    )
+                    listcount += 1
+        else:
+            justification = "This claim needs more information."
+
         results["verdict"] = verdict
         results["justification"] = justification
         results["confidence"] = confidence
-        results["sources"] = list(triples.keys())
 
+    results["sources"] = list(news_data.keys())
     results["currentProcess"] = "Complete"
     results["progress"] = 8 / 8
     yield results
@@ -333,6 +343,8 @@ def score_article(
     if common_count != 0:
         print("Common triples found:", common_count)
 
+    # Scores sentences based on entailment to claim
+    # Returns list of {label, score, sentence}
     alignments = calculate_entailment(claim=claim, sentences=sentences)
     article["alignments"] = alignments
 
