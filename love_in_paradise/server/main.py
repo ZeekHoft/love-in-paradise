@@ -253,15 +253,22 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     print("SCORE | ARTICLE")
     agree = []
     disagree = []
+    urls_to_remove = []
     for article in news_data.values():
         score = article["score"]
         if score > 0 or score < 0:
-            print(f"{score:.2f} | {article["headline"]}")
+            print(f"{score:{" .2f" if score > 0 else ".2f"}} | {article["headline"]}")
             if score > 0:
                 agree.append(article)
             else:
                 disagree.append(article)
+        elif score == 0:
+            urls_to_remove.append(article["link"])
     print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
+
+    # Discard urls with no score
+    for key_url in urls_to_remove:
+        news_data.pop(key_url)
 
     article_scores = [a["score"] for a in news_data.values() if a["score"] != 0]
     if len(article_scores) == 0:
