@@ -313,18 +313,29 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # - Top evidences
     # - Sources
 
-    justification = f"Verdict: {verdict} with a confidence level of {confidence:.0f}%\n"
+    justification = f"According to the algorithm, the claim is evaluated to be {verdict} with a confidence level of {confidence:.0f}%\n"
 
     if len(article_scores) > 3:
         reverse = True if average_score > 0 else False
         top3 = sorted(article_scores, reverse=reverse)[:3]
         listcount = 1
-        justification += "Here are the top evidences that support the verdict\n"
+        justification += "Here are the top evidences that are support of the verdict\n"
         for article in news_data.values():
             if article["score"] in top3:
+                if average_score > 0:
+                    alignments = [
+                        a for a in article["alignments"] if a["label"] == "entailment"
+                    ]
+                else:
+                    alignments = [
+                        a
+                        for a in article["alignments"]
+                        if a["label"] == "contradiction"
+                    ]
+                evidence = max(alignments, key=lambda x: x["score"])
                 justification += (
-                    f"{listcount}. {article["headline"]} ({article["link"]})\n"
-                    + f"Evidence: {article["evidence"]}\n"
+                    f"{listcount}. {article['headline']} ({article['link']})\n"
+                    + f"Evidence: {evidence['sentence']}\n"
                 )
                 listcount += 1
 
