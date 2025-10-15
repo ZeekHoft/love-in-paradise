@@ -160,7 +160,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
     # Discard urls with no relevant sentences
     for key_url in urls_to_remove:
-        print(f"Removed News: {news_data[key_url]["headline"]}")
+        print(f"Removed News: {news_data[key_url]['headline']}")
+
         news_data.pop(key_url)
     print()
 
@@ -250,7 +251,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     for article in news_data.values():
         score = article["score"]
         if score > 0 or score < 0:
-            print(f"{score:.2f} | {article["headline"]}")
+            print(f"{score:.2f} | {article['headline']}")
             if score > 0:
                 agree.append(article)
             else:
@@ -315,8 +316,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         for article in news_data.values():
             if article["score"] in top3:
                 justification += (
-                    f"{listcount}. {article["headline"]} ({article["link"]})\n"
-                    + f"Evidence: {article["evidence"]}\n"
+                    f"{listcount}. {article['headline']} ({article['link']})\n"
+                    + f"Evidence: {article['evidence']}\n"
                 )
                 listcount += 1
 
@@ -372,12 +373,12 @@ def score_article(claim: str, article: dict):
     top_score = max([abs(x[1]) for x in alignments])
     for label, score in alignments:
         if score == abs(top_score):
-            article["evidence"] = sentences[alignments.index((label, score))]
+            article['evidence'] = sentences[alignments.index((label, score))]
         evidence_count[label] += 1
         evidence_values[label] += score.item()
 
-    entailment = evidence_values["entailment"]
-    contradiction = evidence_values["contradiction"]
+    entailment = evidence_values['entailment']
+    contradiction = evidence_values['contradiction']
 
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)

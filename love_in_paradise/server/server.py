@@ -33,4 +33,5 @@ def handle_post_request():
 
 
 if __name__ == "__main__":
+    print("Flask server is running at http://0.0.0.0:8080")
     app.run(debug=True, host="0.0.0.0", port=8080)
