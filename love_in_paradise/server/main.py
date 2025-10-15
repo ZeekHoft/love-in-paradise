@@ -260,6 +260,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     article_scores = [a["score"] for a in news_data.values() if a["score"] != 0]
     if len(article_scores) == 0:
         print("No significant evidence found.")
+        results["justification"] = "No significant evidence found."
+        yield
         return
     average_score = sum(article_scores) / len(article_scores)
     print(f"Final Score: {average_score}")
@@ -276,10 +278,10 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     results["progress"] = 7 / 8
     yield results
 
-    if len(article_scores) > 0:
-        confidence = abs((average_score / (len(article_scores) ** 0.5)) * 100)
-    else:
-        confidence = 0
+    # Calculate confidence based on standard deviation
+    standard_deviation = np.std(article_scores)
+    confidence = (1 - standard_deviation / 2) * 100
+    confidence = max(0, min(100, confidence))
     print(f"Confidence Level: {confidence:.1f}%")
 
     # Verdict Assigment
