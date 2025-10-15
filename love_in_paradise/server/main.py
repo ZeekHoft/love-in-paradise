@@ -105,7 +105,9 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     articleScraper = ArticleScraper()
     news_data = articleScraper.article_scraper(articles)
     if len(news_data) == 0:
-        print("empty news data")
+        print("Problem occurred in scraping data")
+        results["justification"] = "Problem occurred in scraping data"
+        yield results
         return
 
     """
