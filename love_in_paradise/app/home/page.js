@@ -72,27 +72,35 @@ function Home() {
   const handleSubmit = () => {
     setLoading(true);
 
-    async function readStream(url = "", data = {}) {
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
+async function readStream(url = "", data = {}) {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-        const reader = response.body.getReader();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            setLoading(false);
-            setIsVerdictTrue(true);
-            setShowVerdict(true);
-            break;
-          }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
 
-          const decoder = new TextDecoder("utf-8");
-          console.log(decoder.decode(value));
-          const latestMessage = JSON.parse(decoder.decode(value));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        setLoading(false);
+        setShowVerdict(true);
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // save incomplete line for next chunk
+
+      for (let line of lines) {
+        if (line.trim() === "") continue;
+
+        try {
+          const latestMessage = JSON.parse(line);
 
           if (latestMessage.articles || latestMessage.article_urls) {
             setMessage((prev) => ({
@@ -102,17 +110,21 @@ function Home() {
           }
 
           setMessage((prev) => ({ ...prev, ...latestMessage }));
+        } catch (err) {
+          console.error("Failed to parse JSON line:", line, err);
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-        setMessage({ justification: "An error occurred. Please try again." });
       }
     }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    setLoading(false);
+    setMessage({ justification: "An error occurred. Please try again." });
+  }
+}
 
     readStream("http://localhost:8080/api/home", {
       name: news,
-      use_llm: useLLM,
+      useLLM: useLLM,
     });
   };
 
@@ -212,24 +224,36 @@ function Home() {
               </span>
             </div>
           )}
+
           {message.article_urls && message.article_urls.length > 0 && (
-            <div className="articles-container">
-              <p className="articles-title">Relevant Articles:</p>
-              <div className="articles-grid">
-                {message.article_urls.map((url, index) => (
-                  <a
-                    key={index}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="article-box"
-                  >
-                    <p className="article-headline">
-                      {message.headlines?.[url] || url}
-                    </p>
-                  </a>
-                ))}
+            <div className="flex flex-col md:flex-row gap-6 mt-6 max-w-6xl w-full">
+              {/* Articles Section */}
+              <div className="flex-1">
+                <p className="articles-title font-semibold mb-2">Relevant Articles:</p>
+                <div className="articles-grid grid gap-3">
+                  {message.article_urls.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="article-box p-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+                    >
+                      <p className="article-headline">
+                        {message.headlines?.[url] || url}
+                      </p>
+                    </a>
+                  ))}
+                </div>
               </div>
+
+              {/* Justification Section */}
+              {message.justification && (
+                <div className="flex-1 bg-gray-[#303030] p-4 rounded-lg text-gray-200 max-h-[400px] overflow-y-auto">
+                  <p className="justification-title sticky font-semibold mb-2">Justification:</p>
+                  <pre className="justification-box whitespace-pre-wrap">{message.justification}</pre>
+                </div>
+              )}
             </div>
           )}
 
