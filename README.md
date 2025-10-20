@@ -1,39 +1,36 @@
-## Usage Instructions
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-Run the following commands in terminal.
+## Getting Started
 
-### 1. Create virtual environment inside project root directory
+First, run the development server:
 
-Not required but recommended. Skip to step 3 to install directly on computer.
-
-```
-python -m venv .venv
-```
-
-### 2. Activate virtual environment
-
-```
-.\.venv\Scripts\activate
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-### 3. Install requirements
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-This installs spaCy and English and Tagalog NLP pipelines. Estimated storage size of 1.8 GB, install aswell transformers and torch for the pre-trained library and building deep learning models the size should be around 200mb
+You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-```
-python -m pip install -r .\requirements.txt
-python -m spacy download en_core_web_sm
-pip install transformers torch
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-### 4. Running Python file
+## Learn More
 
-Run either english or tagalog python files to view corresponding output. Example:
+To learn more about Next.js, take a look at the following resources:
 
-```
-python .\english.py
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## Credits
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-Tagalog NLP pipeline taken from [calamanCy](https://huggingface.co/ljvmiranda921/tl_calamancy_md).
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
