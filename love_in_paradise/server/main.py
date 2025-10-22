@@ -1,6 +1,5 @@
 from analysis.open_info_extraction import OpenInformationExtraction
 from analysis.sentence_similarity import SentenceSimilarity
-from webcrawling.rappler_scraper import RapplerScraper
 from webcrawling.article_scraper import ArticleScraper
 from tokenization.english import Eng_Tokenization_NLP
 from llm.fact_checker_agent import FactCheckerAgent
@@ -12,8 +11,9 @@ from analysis.utils import generate_graph
 from logs import DocumentLogs
 
 from typing import Generator
-from time import time
+import numpy as np
 import spacy
+import traceback
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
@@ -50,19 +50,19 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # Take claim input
     claim_input = claim 
 
-    # Tokenize
-    tokenizer = Eng_Tokenization_NLP()
-    tokenizer.tokenizationProcess(word_list=claim_input.split())
-    print("Finished tokenization.")
+        # Tokenize
+        tokenizer = Eng_Tokenization_NLP()
+        tokenizer.tokenizationProcess(word_list=claim_input.split())
+        print("Finished tokenization.")
 
-    # Classify input if it is verifiable or not
-    try:
-        input_classification = classify_input(claim_input)
-        if input_classification in ACCEPT_LIST:
+        # Classify input if it is verifiable or not
+        try:
+            input_classification = classify_input(claim_input)
+            if input_classification in ACCEPT_LIST:
 
-            results["currentProcess"] = "Searching the web"
-            results["progress"] = 2 / 8
-            yield results
+                results["currentProcess"] = "Searching the web"
+                results["progress"] = 2 / 8
+                yield results
 
             print(f"Input is a {input_classification}; proceeding to tokenization.")
             search_query = " ".join(
@@ -79,160 +79,173 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 results["justification"] = (
                     "No news articles found related to news claim."
                 )
+
+                print(f"Found {len(articles)} articles from search")
+
+                if len(articles) == 0:
+                    print("No news articles found related to news claim.")
+                    results["justification"] = (
+                        "No news articles found related to news claim."
+                    )
+                    yield results
+                    return
+                # print(articles)
+            else:
+                print("Input is not considered a news claim!")
+                results["justification"] = "Input is not considered a news claim!"
                 yield results
                 return
-            # print(articles)
-        else:
-            print("Input is not considered a news claim!")
-            results["justification"] = "Input is not considered a news claim!"
+        except Exception as e:
+            print((f"News claim has missing some missing key elements: {e}"))
+            traceback.print_exc()
+            results["justification"] = (
+                f"News claim has missing some missing key elements: {e}"
+            )
             yield results
             return
-    except Exception as e:
-        print((f"News claim has missing some missing key elements: {e}"))
-        results["justification"] = (
-            f"News claim has missing some missing key elements: {e}"
-        )
+
+        results["currentProcess"] = "Retrieving data from articles"
+        results["progress"] = 3 / 8
         yield results
-        return
 
-    results["currentProcess"] = "Retrieving data from articles"
-    results["progress"] = 3 / 8
-    yield results
+        # Scrape each article
+        articleScraper = ArticleScraper()
+        news_data = articleScraper.article_scraper(articles)
+        if len(news_data) == 0:
+            print("Problem occurred in scraping data")
+            results["justification"] = "Problem occurred in scraping data"
+            yield results
+            return
 
-    # Scrape each article
-    # rappler_scraper = RapplerScraper()
-    # news_data = rappler_scraper.scrape_urls(articles)
+        """
+        news_data = {
+            "headline": HEADLINE,
+            "content": CONTENT,
+            "sentences": will be compared to claim,
+            "link": url
+        }
+        """
 
-    articleScraper = ArticleScraper()
-    news_data = articleScraper.article_scraper(articles)
-    if len(news_data) == 0:
-        print("empty news data")
-        return
+        print(f"Successfully scraped {len(news_data)} articles")
 
-    """
-    news_data = {
-        "headline": HEADLINE,
-        "content": CONTENT,
-        "sentences": will be compared to claim,
-        "link": url
-    }
-    """
+        print("Scraped Articles ==================================")
+        for url, data in news_data.items():
+            print(url)
+            print(data["headline"])
 
-    # !! TODO: text processing of article content here !!
+        results["currentProcess"] = "Searching for relevant information"
+        results["progress"] = 4 / 8
+        yield results
 
-    print("Scraped Articles ==================================")
-    for url, data in news_data.items():
-        print(url)
-        print(data["headline"])
-        # print(data["content"])
-        # return data["content"]
+        # SEMANTIC SENTENCE SEARCH
+        # Filtering out the most relevant data
+        print("Finding relevant data:")
+        sentence_similarity = SentenceSimilarity(nlp)
+        sentence_similarity.set_main_sentence(claim_input)
+        relevant_sentences = {}
+        urls_to_remove = []
+        for url, data in news_data.items():
+            ss = sentence_similarity.find_similar_sentences(
+                data["content"],
+                cutoff_score=0.50,
+            )
+            print(data["headline"])
+            if ss == []:
+                print("No similar sentences found.")
+                urls_to_remove.append(url)
 
-    results["currentProcess"] = "Searching for relevant information"
-    results["progress"] = 4 / 8
-    yield results
+            else:
+                print("SCORE | SENTENCE")
+                for sentence, score in ss:
+                    print(f"{score:.4f} | {sentence}")
+                    if url not in relevant_sentences.keys():
+                        relevant_sentences[url] = [sentence]
+                        news_data[url]["sentences"] = [sentence]
+                    else:
+                        relevant_sentences[url].append(sentence)
+                        news_data[url]["sentences"].append(sentence)
+            print()
 
-    # SEMANTIC SENTENCE SEARCH
-    # Filtering out the most relevant data
-    print("Finding relevant data:")
-    sentence_similarity = SentenceSimilarity(nlp)
-    sentence_similarity.set_main_sentence(claim_input)
-    relevant_sentences = {}
-    urls_to_remove = []
-    for url, data in news_data.items():
-        ss = sentence_similarity.find_similar_sentences(
-            data["content"],
-            cutoff_score=0.35,
-        )
-        print(data["headline"])
-        if ss == []:
-            print("No similar sentences found.")
-            urls_to_remove.append(url)
-
-        else:
-            print("SCORE | SENTENCE")
-            for sentence, score in ss:
-                print(f"{score:.4f} | {sentence}")
-                if url not in relevant_sentences.keys():
-                    relevant_sentences[url] = [sentence]
-                    news_data[url]["sentences"] = [sentence]
-                else:
-                    relevant_sentences[url].append(sentence)
-                    news_data[url]["sentences"].append(sentence)
+        # Discard urls with no relevant sentences
+        for key_url in urls_to_remove:
+            print(f"Removed News: {news_data[key_url]["headline"]}")
+            news_data.pop(key_url)
         print()
 
-    # Discard urls with no relevant sentences
-    for key_url in urls_to_remove:
-        print(f"Removed News: {news_data[key_url]["headline"]}")
-        news_data.pop(key_url)
-    print()
+        print(f"Total articles with relevant content: {len(relevant_sentences)}")
 
-    # relevant sentences is url: [sentences]
+        # Information Extraction
+        # ===============================================================
+        # Gets subject, predicate, object triples
+        info_ext = OpenInformationExtraction()
+        claim_triples = info_ext.generate_triples(claim_input)
+        print(f"Claim triples: {claim_triples}")
 
-    results["currentProcess"] = "Extracting information"
-    results["progress"] = 5 / 8
-    yield results
+        results["currentProcess"] = "Comparing evidence to claim"
+        results["progress"] = 5 / 8
+        yield results
 
-    # Information Extraction
-    # ===============================================================
-    # Gets subject, predicate, object triples
-    # try:
-    triples = {}  # triples separated by url
-    """
-    triples = {
-        url: [(triple), (triple)],
-    }
-    """
-    only_triples = []  # list of all triples for graph generation
-    info_ext = OpenInformationExtraction()
-    for url, sentences in relevant_sentences.items():
-        url_triples = []
-        for sent in sentences:
-            gen_triples = info_ext.generate_triples(sent)
-            if gen_triples:
-                url_triples.extend(gen_triples)
-        if url_triples != []:
-            triples[url] = url_triples
-            only_triples.extend(url_triples)
+        # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
+        # ===============================================================
+        # Given a list of the most relevant sentences from articles, evaluate them against the claim
+        # -> evidences = {"agree", "disagree", "neutral"}
 
-    claim_triples = info_ext.generate_triples(claim_input)
-    print(f"Claim triples: {claim_triples}")
+        print("Scoring each article")
+        for article in news_data.values():
+            # Score each article based on semantic entailment and matching triples
+            score_article(
+                claim=claim_input,
+                article=article,
+                oie=info_ext,
+                claim_triples=claim_triples,
+            )
+        print("Done scoring\n")
 
-    # generate_graph(only_triples)
+        results["currentProcess"] = "Aggregating Scores"
+        results["progress"] = 6 / 8
+        yield results
 
-    results["currentProcess"] = "Comparing evidence to claim"
-    results["progress"] = 6 / 8
-    yield results
+        print("SCORE | ARTICLE")
+        agree = []
+        disagree = []
+        urls_to_remove = []
+        for article in news_data.values():
+            score = article["score"]
+            if score > 0 or score < 0:
+                print(
+                    f"{score:{" .2f" if score > 0 else ".2f"}} | {article["headline"]}"
+                )
+                if score > 0:
+                    agree.append(article)
+                else:
+                    disagree.append(article)
+            elif score == 0:
+                urls_to_remove.append(article["link"])
+        print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
 
-    # CLAIM-EVIDENCE ALIGNMENT & ENTAILMENT SCORING
-    # ===============================================================
-    # Given a list of the most relevant sentences from articles, evaluate them against the claim
-    # -> evidences = {"agree", "disagree", "neutral"}
+        # Discard urls with no score
+        for key_url in urls_to_remove:
+            news_data.pop(key_url)
 
-    print("Matching triples...")
-    subjects = []
-    matching_triple_count = 0
-    for claim_triple in claim_triples:
-        subjects.append(claim_triple[0])
-        subjects.append(claim_triple[2])
-        for url in triples.keys():
-            for tripl in triples[url]:
-                if tripl == claim_triple:
-                    # print(f"Matching triple: {tripl} in {url}")
-                    matching_triple_count += 1
-    print(f"Total matching triples: {matching_triple_count}")
+        article_scores = [a["score"] for a in news_data.values() if a["score"] != 0]
+        if len(article_scores) == 0:
+            print("No significant evidence found.")
+            results["justification"] = "No significant evidence found."
+            yield
+            return
+        average_score = sum(article_scores) / len(article_scores)
+        print(f"Final Score: {average_score}")
 
-    print("subjects: ", subjects)
+        # AGGREGATION
+        # ===============================================================
+        # More agree-ing evidences: higher confidence, -> True
+        # Few agree-ing evidences: low confidence,-> Likely True
+        # Divisive, 50-50 agree/disagree: Unsure, Need more information
+        # Few disagree-ing confidence: low confidence, -> Likely False
+        # More disagree-ing confidence: high confidence, -> False
 
-    # Convert triples that have claim subject into string
-    relevant_evidence = []
-    for source, url_triple in triples.items():
-        for tri in url_triple:
-            if list(set(subjects) & set(tri)):
-                # print(f"urls in tri: {tri}")
-                relevant_evidence.append(" ".join(tri))
-
-    if subjects == [] or relevant_evidence == []:
-        results["justification"] = "This news claim seems to be low on information"
+        results["currentProcess"] = "Finalizing score"
+        results["progress"] = 7 / 8
         yield results
         # return
 
@@ -259,91 +272,132 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 disagree.append(article)
     print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
 
-    article_scores = [a["score"] for a in news_data.values() if a["score"] != 0]
-    if len(article_scores) == 0:
-        print("No significant evidence found.")
-        return
-    average_score = sum(article_scores) / len(article_scores)
-    print(f"Final Score: {average_score}")
+        # Calculate confidence based on standard deviation
+        standard_deviation = np.std(article_scores)
+        confidence = (1 - standard_deviation / 2) * 100
+        confidence = max(0, min(100, confidence))
+        print(f"Confidence Level: {confidence:.1f}%")
 
-    # AGGREGATION
-    # ===============================================================
-    # More agree-ing evidences: higher confidence, -> True
-    # Few agree-ing evidences: low confidence,-> Likely True
-    # Divisive, 50-50 agree/disagree: Unsure, Need more information
-    # Few disagree-ing confidence: low confidence, -> Likely False
-    # More disagree-ing confidence: high confidence, -> False
+        # Verdict Assigment
+        THRESHOLD1 = 0.3
+        THRESHOLD2 = 0.45
+        if -THRESHOLD1 < average_score < THRESHOLD1:
+            verdict = "UNSURE"
+        elif average_score <= -THRESHOLD2:
+            verdict = "FALSE"
+        elif average_score <= -THRESHOLD1:
+            verdict = "LIKELY FALSE"
+        elif average_score >= THRESHOLD2:
+            verdict = "TRUE"
+        elif average_score >= THRESHOLD1:
+            verdict = "LIKELY TRUE"
+        # AGGREGATION OF VERDICT AND JUSTIFICATION
+        # ===============================================================
+        # Decide verdict based on average score
+        THRESHOLD1 = 0.3
+        THRESHOLD2 = 0.45
 
-    results["currentProcess"] = "Finalizing score"
-    results["progress"] = 7 / 8
-    yield results
+        if -THRESHOLD1 < average_score < THRESHOLD1:
+            verdict = "UNSURE"
+        elif average_score <= -THRESHOLD2:
+            verdict = "FALSE"
+        elif average_score <= -THRESHOLD1:
+            verdict = "LIKELY FALSE"
+        elif average_score >= THRESHOLD2:
+            verdict = "TRUE"
+        elif average_score >= THRESHOLD1:
+            verdict = "LIKELY TRUE"
 
-    if len(article_scores) > 0:
-        confidence = abs((average_score / (len(article_scores) ** 0.5)) * 100)
-    else:
-        confidence = 0
-    print(f"Confidence Level: {confidence:.1f}%")
-
-    # Verdict Assigment
-    THRESHOLD1 = 0.3
-    THRESHOLD2 = 0.45
-    if -THRESHOLD1 < average_score < THRESHOLD1:
-        verdict = "UNSURE"
-    elif average_score <= -THRESHOLD2:
-        verdict = "FALSE"
-    elif average_score <= -THRESHOLD1:
-        verdict = "LIKELY FALSE"
-    elif average_score >= THRESHOLD2:
-        verdict = "TRUE"
-    elif average_score >= THRESHOLD1:
-        verdict = "LIKELY TRUE"
-
-    # JUSTIFICATION GENERATION
-    # ===============================================================
-    # Use a template sentence for justification
-    # Some things to display:
-    # - Verdict
-    # - Justification
-    # - Top evidences
-    # - Sources
-
-    justification = f"Verdict: {verdict} with a confidence level of {confidence:.0f}%\n"
-
-    if len(article_scores) > 3:
-        reverse = True if average_score > 0 else False
-        top3 = sorted(article_scores, reverse=reverse)[:3]
-        listcount = 1
-        justification += "Here are the top evidences that support the verdict\n"
-        for article in news_data.values():
-            if article["score"] in top3:
-                justification += (
-                    f"{listcount}. {article["headline"]} ({article["link"]})\n"
-                    + f"Evidence: {article["evidence"]}\n"
-                )
-                listcount += 1
-
-    if use_llm:
-        print("==============================")
-        print("LLM Response:")
-        fca = FactCheckerAgent(claim=claim_input, knowledge=str(relevant_sentences))
-        agent_response = fca.verify()
-        if agent_response:
-            results["verdict"] = agent_response[0]
-            results["justification"] = agent_response[1]
-            results["sources"] = list(relevant_sentences.keys())
+        # JUSTIFICATION GENERATION
+        if use_llm:
+            # Use LLM agent
+            print("==============================")
+            print("LLM Response:")
+            fca = FactCheckerAgent(claim=claim_input, knowledge=str(news_data))
+            agent_response = fca.verify()
+            if agent_response:
+                results["verdict"] = agent_response[0]
+                results["justification"] = agent_response[1]
+                results["confidence"] = 0
+            else:
+                results["justification"] = "Error: No response from LLM"
+                yield results
+                return
         else:
-            # No data from LLM API
-            results["justification"] = "Error: No response from LLM"
+            # Manual justification based on top articles
+            justification = ""
+            if len(article_scores) >= 3:
+                # Get top 3 articles in support of verdict
+                reverse = average_score > 0
+                top3_scores = sorted(article_scores, reverse=reverse)[:3]
+
+                justification += (
+                    "The verdict was evaluated based on the following news articles:\n"
+                    + "(Listed based on relevance)\n"
+                )
+
+                listcount = 1
+                for article in news_data.values():
+                    if article["score"] in top3_scores:
+                        # Filter alignments based on verdict type
+                        if average_score > 0:
+                            alignments = [
+                                a
+                                for a in article.get("alignments", [])
+                                if a["label"] == "entailment"
+                            ]
+                        else:
+                            alignments = [
+                                a
+                                for a in article.get("alignments", [])
+                                if a["label"] == "contradiction"
+                            ]
+
+                        if alignments:
+                            evidence = max(alignments, key=lambda x: x["score"])
+                            justification += (
+                                f"{listcount}. {article['headline']}\n"
+                                + f"Evidence: {evidence['sentence']}\n"
+                            )
+                        else:
+                            # Fallback if no strong evidence
+                            justification += (
+                                f"{listcount}. {article['headline']}\n"
+                                + "Evidence: No strong evidence found\n"
+                            )
+                        listcount += 1
+            else:
+                justification = "Less than 3 articles were found. This claim needs more information."
+
+            results["verdict"] = verdict
+            results["justification"] = justification
+            results["confidence"] = confidence
+
+            results["article_urls"] = list(news_data.keys())
+            results["headlines"] = {
+                key: value["headline"].replace('"', "'")
+                for key, value in news_data.items()
+            }
+            results["sources"] = list(news_data.keys())
+            results["currentProcess"] = "Complete"
+            results["progress"] = 8 / 8
             yield results
             return
-
-    else:
-        # Manual method
-        results["verdict"] = verdict
-        results["justification"] = justification
-        results["confidence"] = confidence
-        results["sources"] = list(triples.keys())
-
+    except Exception as e:
+        # Catch any unhandled exceptions
+        print(f"Unexpected error in love_in_paradise: {e}")
+        traceback.print_exc()
+        results["justification"] = f"Unexpected error: {str(e)}"
+        results["currentProcess"] = "Error"
+        results["progress"] = 8 / 8
+        yield results
+        return
+    # Always include article URLs and headlines
+    results["article_urls"] = list(news_data.keys())
+    results["headlines"] = {
+        key: value["headline"].replace('"', "'") for key, value in news_data.items()
+    }
+    results["sources"] = list(news_data.keys())
     results["currentProcess"] = "Complete"
     results["progress"] = 8 / 8
     yield results
@@ -353,17 +407,30 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     return
 
 
-def score_article(claim: str, article: dict):
+def score_article(
+    claim: str, article: dict, oie: OpenInformationExtraction, claim_triples: list
+):
     """
     Score an article based on claim
     """
     sentences = article["sentences"]
 
-    # Compare with all sentences in article
-    # doc = nlp(article["content"])
-    # tokenized_sentences = [sent.text.strip() for sent in doc.sents]
+    # Triple comparison with claim
+    common_count = 0
+    for sentence in sentences:
+        article_triples = oie.generate_triples(sentence)
+        if article_triples:
+            common = set(article_triples).intersection(set(claim_triples))
+            common_count += len(common)
 
+    if common_count != 0:
+        print("Common triples found:", common_count)
+
+    # Scores sentences based on entailment to claim
+    # Returns list of {label, score, sentence}
     alignments = calculate_entailment(claim=claim, sentences=sentences)
+    article["alignments"] = alignments
+
     evidence_count = {
         "neutral": 0,
         "entailment": 0,
@@ -374,32 +441,26 @@ def score_article(claim: str, article: dict):
         "entailment": 0,
         "contradiction": 0,
     }
-    top_score = max([abs(x[1]) for x in alignments])
-    for label, score in alignments:
-        if score == abs(top_score):
-            article["evidence"] = sentences[alignments.index((label, score))]
-        evidence_count[label] += 1
-        evidence_values[label] += score.item()
 
-    entailment = evidence_values["entailment"]
+    for alignment in alignments:
+        label = alignment["label"]
+        evidence_count[label] += 1
+        evidence_values[label] += alignment["score"]
+
+    entailment = evidence_values["entailment"] + common_count
     contradiction = evidence_values["contradiction"]
 
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)
-    # print("Article:", article["headline"])
-    # if entailment != 0 or contradiction != 0:
-    #     percentage = (entailment / (entailment + contradiction)) * 100
-    #     print(
-    #         f"Entailment: {entailment:.2f}, Contradiction: {contradiction:.2f}, Agree: {percentage:.0f}%, Score: {score:.2f}"
-    #     )
-    # else:
-    #     print("no score (not enough evidence)")
-    # print()
     article["score"] = score
 
 
 # if __name__ == "__main__":
 #     # New way to run code:
-#     lip = love_in_paradise(news)
+#     lip = love_in_paradise(news, use_llm=False)
+#     final = None
 #     for result in lip:
-#         print(result)
+#         print(result["currentProcess"])
+#         final = result
+#     for key, val in final.items():
+#         print(f"{key.title()}: {val}")

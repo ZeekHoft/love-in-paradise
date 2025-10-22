@@ -3,8 +3,8 @@ import torch
 
 
 model = AutoModelForSequenceClassification.from_pretrained(
-    # "cross-encoder/nli-MiniLM2-L6-H768"
     "cross-encoder/nli-deberta-v3-small"
+    # "cross-encoder/nli-MiniLM2-L6-H768"
 )
 tokenizer = AutoTokenizer.from_pretrained(
     "cross-encoder/nli-deberta-v3-small"
@@ -12,7 +12,7 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 
 
-def calculate_entailment(claim, sentences) -> list[tuple[str, float]]:
+def calculate_entailment(claim, sentences) -> list[dict]:
     """
     Checks if facts on the evidence are consistent with the claim.
 
@@ -37,9 +37,11 @@ def calculate_entailment(claim, sentences) -> list[tuple[str, float]]:
             top_score = max_scores[i]
             score = scores[i][top_score]
             label = label_mapping[top_score]
-            # if score > 4 and label != "neutral":
-            #     print(f"{sentences[i]} {label}, {score}")
-            # Example: ("entailment", 0.35)
-            # print((label, score.item()))
-            labels.append((label, score))
+            labels.append(
+                {
+                    "label": label,
+                    "score": score.item(),
+                    "sentence": sentences[i],
+                }
+            )
         return labels
