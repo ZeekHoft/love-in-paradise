@@ -7,13 +7,12 @@ from llm.fact_checker_agent import FactCheckerAgent
 from analysis.evidence_alignment import calculate_entailment
 from webcrawling.search_articles import search_news
 from clasification.check import classify_input
-from analysis.utils import generate_graph
-from logs import DocumentLogs
 
+from logs import DocumentLogs
 from typing import Generator
 import numpy as np
-import spacy
 import traceback
+import spacy
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
@@ -41,14 +40,16 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         "progress": 0.0,
     }
 
-    results["currentProcess"] = "Checking if claim is verifiable"
-    results["progress"] = 1 / 8
-    yield results
-    
-    log_collector = DocumentLogs()
+    try:
 
-    # Take claim input
-    claim_input = claim 
+        results["currentProcess"] = "Checking if claim is verifiable"
+        results["progress"] = 1 / 8
+        yield results
+
+        log_collector = DocumentLogs()
+
+        # Take claim input
+        claim_input = claim
 
         # Tokenize
         tokenizer = Eng_Tokenization_NLP()
@@ -249,28 +250,28 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         yield results
         # return
 
-    # except Exception as e:
-    #     results["justification"] = f"Error in algo here: {e}"
-    #     yield results
-    #     return
+        # except Exception as e:
+        #     results["justification"] = f"Error in algo here: {e}"
+        #     yield results
+        #     return
 
-    print("Scoring each article")
-    for article in news_data.values():
-        unique_value = score_article(claim=claim_input, article=article)
-    print("Done scoring\n")
+        print("Scoring each article")
+        for article in news_data.values():
+            score_article(claim=claim_input, article=article)
+        print("Done scoring\n")
 
-    print("SCORE | ARTICLE")
-    agree = []
-    disagree = []
-    for article in news_data.values():
-        score = article["score"]
-        if score > 0 or score < 0:
-            print(f"{score:.2f} | {article["headline"]}")
-            if score > 0:
-                agree.append(article)
-            else:
-                disagree.append(article)
-    print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
+        print("SCORE | ARTICLE")
+        agree = []
+        disagree = []
+        for article in news_data.values():
+            score = article["score"]
+            if score > 0 or score < 0:
+                print(f"{score:.2f} | {article["headline"]}")
+                if score > 0:
+                    agree.append(article)
+                else:
+                    disagree.append(article)
+        print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
 
         # Calculate confidence based on standard deviation
         standard_deviation = np.std(article_scores)
@@ -401,9 +402,13 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     results["currentProcess"] = "Complete"
     results["progress"] = 8 / 8
     yield results
-            
-    log_collector.paradise_logs( log_collector.user_input(claim_input), log_collector.valid_claim(results),log_collector.search_log(search_query))
-    
+
+    log_collector.paradise_logs(
+        log_collector.user_input(claim_input),
+        log_collector.valid_claim(results),
+        log_collector.search_log(search_query),
+    )
+
     return
 
 
