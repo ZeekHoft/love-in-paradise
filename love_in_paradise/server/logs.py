@@ -18,6 +18,7 @@ except Exception as e:
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# print(os.path.exists(os.path.join(current_dir, FIREBASE_CREDENTIALS)))
 
 
 class DocumentLogs:
@@ -44,7 +45,10 @@ class DocumentLogs:
             'valid cliam': valid,
             'log id': doc_ref.id
         }
+        print("Writing to Firestore...")
         doc_ref.set(data)
+        print("Successfully written:", doc_ref.id)
+
 
     
     def user_input(self, user_input):
@@ -52,9 +56,10 @@ class DocumentLogs:
     def valid_claim(self, valid_claim):
         return valid_claim
     def search_log(self, search_log):
+        print("testing")
         return search_log
 
-    
+
 # logs = DocumentLogs()
 # print(logs.paradise_logs(logs.tokens()))
 
