@@ -7,7 +7,6 @@ from llm.fact_checker_agent import FactCheckerAgent
 from analysis.evidence_alignment import calculate_entailment
 from webcrawling.search_articles import search_news
 from clasification.check import classify_input
-from analysis.utils import generate_graph
 from logs import DocumentLogs
 
 from typing import Generator
@@ -17,9 +16,10 @@ import traceback
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
-news = "DepEd tallies nearly P13B worth of damage to schools due to Cebu earthquake"
-# news = "Firm owned by Bong Go’s kin once worked with Discayas for Davao projects"
-# news = "All persons who received a COVID-19 vaccine may develop diseases such as cancer and vision loss."
+news = "High pressure area over China influencing Tropical Depression Salome"
+# news = "CLTG Builders worked with the Discayas for Davao projects"
+# news = "Some celebrities participated in assisting Cebu earthquake victims."
+# news = "A Chinese Coast Guard ship fired its water cannon at a Philippine vessel near the West Philippine Sea."
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -40,15 +40,14 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         "currentProcess": None,
         "progress": 0.0,
     }
-
-    results["currentProcess"] = "Checking if claim is verifiable"
-    results["progress"] = 1 / 8
-    yield results
-    
     log_collector = DocumentLogs()
+    try:
+        results["currentProcess"] = "Checking if claim is verifiable"
+        results["progress"] = 1 / 8
+        yield results
 
-    # Take claim input
-    claim_input = claim 
+        # Take claim input
+        claim_input = claim
 
         # Tokenize
         tokenizer = Eng_Tokenization_NLP()
@@ -64,20 +63,16 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 results["progress"] = 2 / 8
                 yield results
 
-            print(f"Input is a {input_classification}; proceeding to tokenization.")
-            search_query = " ".join(
-                tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
-            )
-            # Search articles/ Web crawling
-            print("Search Terms: " + search_query + "\n")
-            articles = search_news(
-                search_query,
-                results_amt=20,
-            )
-            if len(articles) == 0:
-                print("No news articles found related to news claim.")
-                results["justification"] = (
-                    "No news articles found related to news claim."
+                print(f"Input is a {input_classification}; proceeding to tokenization.")
+                search_query = claim_input
+                search_query = " ".join(
+                    tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
+                )
+
+                # Search articles - Request 20 results (2 API calls, allows 50 fact-checks/day)
+                articles = search_news(
+                    search_query,
+                    results_amt=20,  # 2 API calls per fact-check = 50 fact-checks/day
                 )
 
                 print(f"Found {len(articles)} articles from search")
@@ -247,30 +242,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         results["currentProcess"] = "Finalizing score"
         results["progress"] = 7 / 8
         yield results
-        # return
-
-    # except Exception as e:
-    #     results["justification"] = f"Error in algo here: {e}"
-    #     yield results
-    #     return
-
-    print("Scoring each article")
-    for article in news_data.values():
-        unique_value = score_article(claim=claim_input, article=article)
-    print("Done scoring\n")
-
-    print("SCORE | ARTICLE")
-    agree = []
-    disagree = []
-    for article in news_data.values():
-        score = article["score"]
-        if score > 0 or score < 0:
-            print(f"{score:.2f} | {article["headline"]}")
-            if score > 0:
-                agree.append(article)
-            else:
-                disagree.append(article)
-    print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
 
         # Calculate confidence based on standard deviation
         standard_deviation = np.std(article_scores)
@@ -378,6 +349,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 key: value["headline"].replace('"', "'")
                 for key, value in news_data.items()
             }
+            log_collector.paradise_logs( log_collector.user_input(claim_input), log_collector.valid_claim(results),log_collector.search_log(search_query))
+
             results["sources"] = list(news_data.keys())
             results["currentProcess"] = "Complete"
             results["progress"] = 8 / 8
@@ -398,13 +371,11 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         key: value["headline"].replace('"', "'") for key, value in news_data.items()
     }
     results["sources"] = list(news_data.keys())
+
     results["currentProcess"] = "Complete"
     results["progress"] = 8 / 8
     yield results
-            
-    log_collector.paradise_logs( log_collector.user_input(claim_input), log_collector.valid_claim(results),log_collector.search_log(search_query))
-    
-    return
+
 
 
 def score_article(
@@ -455,12 +426,12 @@ def score_article(
     article["score"] = score
 
 
-# if __name__ == "__main__":
-#     # New way to run code:
-#     lip = love_in_paradise(news, use_llm=False)
-#     final = None
-#     for result in lip:
-#         print(result["currentProcess"])
-#         final = result
-#     for key, val in final.items():
-#         print(f"{key.title()}: {val}")
+if __name__ == "__main__":
+    # New way to run code:
+    lip = love_in_paradise(news, use_llm=False)
+    final = None
+    for result in lip:
+        print(result["currentProcess"])
+        final = result
+    for key, val in final.items():
+        print(f"{key.title()}: {val}")
