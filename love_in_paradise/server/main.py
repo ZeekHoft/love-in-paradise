@@ -16,8 +16,8 @@ import traceback
 
 
 ACCEPT_LIST = ["news claim", "statement", "question"]
-news = "High pressure area over China influencing Tropical Depression Salome"
-# news = "CLTG Builders worked with the Discayas for Davao projects"
+# news = "High pressure area over China influencing Tropical Depression Salome"
+news = "CLTG Builders worked with the Discayas for Davao projects"
 # news = "Some celebrities participated in assisting Cebu earthquake victims."
 # news = "A Chinese Coast Guard ship fired its water cannon at a Philippine vessel near the West Philippine Sea."
 nlp = spacy.load("en_core_web_sm")
@@ -64,10 +64,22 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 yield results
 
                 print(f"Input is a {input_classification}; proceeding to tokenization.")
-                search_query = claim_input
-                search_query = " ".join(
-                    tokenizer.pos_tokens["PROPN"] + tokenizer.pos_tokens["NOUN"]
-                )
+
+                # Build search query from proper nouns and nouns, with fallback
+                propn_tokens = tokenizer.pos_tokens.get("PROPN", [])
+                noun_tokens = tokenizer.pos_tokens.get("NOUN", [])
+                search_query_tokens = propn_tokens + noun_tokens
+
+                # Fallback: if no proper nouns or nouns, use the original claim
+                if not search_query_tokens:
+                    print(
+                        "Warning: No PROPN or NOUN tokens found, using full claim for search"
+                    )
+                    search_query = claim_input
+                else:
+                    search_query = " ".join(search_query_tokens)
+
+                print(f"Search query: {search_query}")
 
                 # Search articles - Request 20 results (2 API calls, allows 50 fact-checks/day)
                 articles = search_news(
@@ -90,6 +102,14 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 results["justification"] = "Input is not considered a news claim!"
                 yield results
                 return
+        except KeyError as e:
+            print(f"Missing POS tag in tokenization: {e}")
+            traceback.print_exc()
+            results["justification"] = (
+                f"Unable to extract key terms from claim. Please try rephrasing."
+            )
+            yield results
+            return
         except Exception as e:
             print((f"News claim has missing some missing key elements: {e}"))
             traceback.print_exc()
@@ -163,7 +183,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
         # Discard urls with no relevant sentences
         for key_url in urls_to_remove:
-            print(f"Removed News: {news_data[key_url]["headline"]}")
+            print(f"Removed News: {news_data[key_url]['headline']}")
             news_data.pop(key_url)
         print()
 
@@ -204,19 +224,18 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         agree = []
         disagree = []
         urls_to_remove = []
-        for article in news_data.values():
+        for url, article in news_data.items():
             score = article["score"]
+            print(f"DEBUG: Article '{article['headline'][:50]}...' scored: {score}")
             if score > 0 or score < 0:
-                print(
-                    f"{score:{" .2f" if score > 0 else ".2f"}} | {article["headline"]}"
-                )
+                print(f"{score: .2f} | {article['headline']}")
                 if score > 0:
                     agree.append(article)
                 else:
                     disagree.append(article)
             elif score == 0:
-                urls_to_remove.append(article["link"])
-        print(f"Agree: {len(agree)}, Disagree: {len(disagree)}")
+                print(f"Article scored 0, removing: {article['headline'][:50]}")
+                urls_to_remove.append(url)
 
         # Discard urls with no score
         for key_url in urls_to_remove:
@@ -226,7 +245,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         if len(article_scores) == 0:
             print("No significant evidence found.")
             results["justification"] = "No significant evidence found."
-            yield
+            yield results
             return
         average_score = sum(article_scores) / len(article_scores)
         print(f"Final Score: {average_score}")
@@ -262,22 +281,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             verdict = "TRUE"
         elif average_score >= THRESHOLD1:
             verdict = "LIKELY TRUE"
-        # AGGREGATION OF VERDICT AND JUSTIFICATION
-        # ===============================================================
-        # Decide verdict based on average score
-        THRESHOLD1 = 0.3
-        THRESHOLD2 = 0.45
-
-        if -THRESHOLD1 < average_score < THRESHOLD1:
-            verdict = "UNSURE"
-        elif average_score <= -THRESHOLD2:
-            verdict = "FALSE"
-        elif average_score <= -THRESHOLD1:
-            verdict = "LIKELY FALSE"
-        elif average_score >= THRESHOLD2:
-            verdict = "TRUE"
-        elif average_score >= THRESHOLD1:
-            verdict = "LIKELY TRUE"
 
         # JUSTIFICATION GENERATION
         if use_llm:
@@ -292,6 +295,8 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                 results["confidence"] = 0
             else:
                 results["justification"] = "Error: No response from LLM"
+                results["currentProcess"] = "Error"
+                results["progress"] = 8 / 8
                 yield results
                 return
         else:
@@ -338,24 +343,61 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
                             )
                         listcount += 1
             else:
-                justification = "Less than 3 articles were found. This claim needs more information."
+                # Handle cases with fewer than 3 articles
+                justification = (
+                    "The verdict was evaluated based on limited news articles:\n"
+                )
+                listcount = 1
+                for article in news_data.values():
+                    # Filter alignments based on verdict type
+                    if average_score > 0:
+                        alignments = [
+                            a
+                            for a in article.get("alignments", [])
+                            if a["label"] == "entailment"
+                        ]
+                    else:
+                        alignments = [
+                            a
+                            for a in article.get("alignments", [])
+                            if a["label"] == "contradiction"
+                        ]
+
+                    if alignments:
+                        evidence = max(alignments, key=lambda x: x["score"])
+                        justification += (
+                            f"{listcount}. {article['headline']}\n"
+                            + f"Evidence: {evidence['sentence']}\n"
+                        )
+                    else:
+                        justification += (
+                            f"{listcount}. {article['headline']}\n"
+                            + "Evidence: No strong evidence found\n"
+                        )
+                    listcount += 1
+                justification += "\nNote: Limited sources available. This claim needs more information for a conclusive verdict."
 
             results["verdict"] = verdict
             results["justification"] = justification
             results["confidence"] = confidence
 
-            results["article_urls"] = list(news_data.keys())
-            results["headlines"] = {
-                key: value["headline"].replace('"', "'")
-                for key, value in news_data.items()
-            }
-            log_collector.paradise_logs( log_collector.user_input(claim_input), log_collector.valid_claim(results),log_collector.search_log(search_query))
+        # Always include article URLs and headlines
+        results["article_urls"] = list(news_data.keys())
+        results["headlines"] = {
+            key: value["headline"].replace('"', "'") for key, value in news_data.items()
+        }
+        log_collector.paradise_logs(
+            log_collector.user_input(claim_input),
+            log_collector.valid_claim(results),
+            log_collector.search_log(search_query),
+        )
 
-            results["sources"] = list(news_data.keys())
-            results["currentProcess"] = "Complete"
-            results["progress"] = 8 / 8
-            yield results
-            return
+        results["sources"] = list(news_data.keys())
+        results["currentProcess"] = "Complete"
+        results["progress"] = 8 / 8
+        yield results
+        return
+
     except Exception as e:
         # Catch any unhandled exceptions
         print(f"Unexpected error in love_in_paradise: {e}")
@@ -365,17 +407,16 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         results["progress"] = 8 / 8
         yield results
         return
-    # Always include article URLs and headlines
-    results["article_urls"] = list(news_data.keys())
-    results["headlines"] = {
-        key: value["headline"].replace('"', "'") for key, value in news_data.items()
-    }
-    results["sources"] = list(news_data.keys())
+    # # Always include article URLs and headlines
+    # results["article_urls"] = list(news_data.keys())
+    # results["headlines"] = {
+    #     key: value["headline"].replace('"', "'") for key, value in news_data.items()
+    # }
+    # results["sources"] = list(news_data.keys())
 
-    results["currentProcess"] = "Complete"
-    results["progress"] = 8 / 8
-    yield results
-
+    # results["currentProcess"] = "Complete"
+    # results["progress"] = 8 / 8
+    # yield results
 
 
 def score_article(
@@ -402,6 +443,9 @@ def score_article(
     alignments = calculate_entailment(claim=claim, sentences=sentences)
     article["alignments"] = alignments
 
+    # Debug output
+    print(f"  Alignments for this article: {len(alignments)}")
+
     evidence_count = {
         "neutral": 0,
         "entailment": 0,
@@ -421,9 +465,12 @@ def score_article(
     entailment = evidence_values["entailment"] + common_count
     contradiction = evidence_values["contradiction"]
 
+    print(f"  Entailment: {entailment}, Contradiction: {contradiction}")
+
     # Score calculation
     score = (entailment - contradiction) / (entailment + contradiction + 1)
     article["score"] = score
+    print(f"  Final score: {score}")
 
 
 if __name__ == "__main__":
