@@ -1,3 +1,4 @@
+from time import sleep
 import newspaper
 
 # import validators
@@ -12,31 +13,42 @@ import newspaper
 
 # Parse through each url and display its content
 class ArticleScraper:
-    def article_scraper(self, article_links):
-        try:
-            from time import sleep
+    def article_scraper(self, article_links, delay=1.0):
+        links_data = {}
 
-            sleep(1)  # delay to avoid limit rates
-            article_content = []
-            links_data = {}
+        try:
+
+            sleep(delay)  # delay to avoid limit rates
+
             # add valid URL detector
             for url in article_links:
-                url_i = newspaper.Article(url="%s" % (url), language="en")
-                url_i.download()
-                url_i.parse()
-                # content = f"TITLE:{url_i.title} CONTENT: {url_i.text}"
-                # article_content.append(content)
+                try:
+                    url_i = newspaper.Article(url="%s" % (url), language="en")
+                    url_i.download()
+                    url_i.parse()
 
-                links_data[url] = {
-                    "headline": url_i.title,
-                    "content": url_i.text,
-                    "link": url,
-                }
+                    # Only add if we got valid content
+                    if url_i.title and url_i.text:
+                        links_data[url] = {
+                            "headline": url_i.title,
+                            "content": url_i.text,
+                        }
+                    else:
+                        print(f"Skipping {url} - no content extracted")
 
+                except Exception as e:
+                    # Log error but continue with other articles
+                    print(f"Error scraping {url}: {e}")
+                    continue
+
+            print(
+                f"Successfully scraped {len(links_data)} out of {len(article_links)} articles"
+            )
             return links_data
             # return "\n".join(article_content)
         except Exception as e:
-            print(f"Error scraping article: {e}")
+            # Return empty dict instead of string
+            print(f"Error in article scraper: {e}")
             return {}
 
 
