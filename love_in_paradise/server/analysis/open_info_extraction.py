@@ -35,28 +35,38 @@ class OpenInformationExtraction:
         """Connect to CoreNLP server with retry logic"""
         for attempt in range(self.max_retries):
             try:
-                # First check if server is accessible
-                response = requests.get("http://localhost:9000/", timeout=2)
-                if response.status_code != 200:
-                    raise Exception(
-                        f"CoreNLP server returned status {response.status_code}"
-                    )
+                if self.client is None:
+                    # First check if server is accessible
+                    response = requests.get("http://localhost:9000/", timeout=2)
+                    if response.status_code != 200:
+                        raise Exception(
+                            f"CoreNLP server returned status {response.status_code}"
+                        )
 
-                # Connect to existing server (don't start a new one!)
-                self.client = CoreNLPClient(
-                    start_server=StartServer.DONT_START,
-                    endpoint="http://localhost:9000",
-                    timeout=60000,
-                    properties=props_filepath,
-                )
+                    # Connect to existing server (don't start a new one!)
+                    self.client = CoreNLPClient(
+                        start_server=StartServer.DONT_START,
+                        endpoint="http://localhost:9000",
+                        timeout=60000,
+                        properties=props_filepath,
+                    )
                 print("CoreNLP client connected successfully")
                 return
 
             except Exception as e:
+                print(f"Error connecting to CoreNLP: {e}")
                 print(
                     f"CoreNLP connection attempt {attempt + 1}/{self.max_retries} failed: {e}"
                 )
                 if attempt < self.max_retries - 1:
+                    # Start new server
+                    self.client = CoreNLPClient(
+                        start_server=StartServer.TRY_START,
+                        endpoint="http://localhost:9000",
+                        timeout=60000,
+                        properties=props_filepath,
+                    )
+
                     wait_time = (attempt + 1) * 2  # Exponential backoff
                     print(f"Retrying in {wait_time} seconds...")
                     time.sleep(wait_time)
