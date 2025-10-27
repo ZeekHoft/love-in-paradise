@@ -382,7 +382,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             results["confidence"] = confidence
 
         # Always include article URLs and headlines
-        results["article_urls"] = list(news_data.keys())
+        results["sources"] = list(news_data.keys())
         results["headlines"] = {
             key: value["headline"].replace('"', "'") for key, value in news_data.items()
         }
@@ -392,7 +392,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             log_collector.search_log(search_query),
         )
 
-        results["sources"] = list(news_data.keys())
         results["currentProcess"] = "Complete"
         results["progress"] = 8 / 8
         yield results
@@ -407,16 +406,6 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         results["progress"] = 8 / 8
         yield results
         return
-    # # Always include article URLs and headlines
-    # results["article_urls"] = list(news_data.keys())
-    # results["headlines"] = {
-    #     key: value["headline"].replace('"', "'") for key, value in news_data.items()
-    # }
-    # results["sources"] = list(news_data.keys())
-
-    # results["currentProcess"] = "Complete"
-    # results["progress"] = 8 / 8
-    # yield results
 
 
 def score_article(
