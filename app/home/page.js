@@ -199,15 +199,17 @@ function Home() {
       {loading && (
         <div className='flex flex-col items-center justify-center absolute inset-0 transition-opacity duration-500 opacity-100'>
           <div className='bigtext2 transition-all'>
-            <p>{currentProcess ?? 'Processing'}</p>
+            <p>{currentProcess || 'Processing'}</p>
           </div>
           {/* Progress Bar */}
-          <div className='w-1/2 mb-24 bg-gray-700 rounded-full h-2.5'>
-            <div
-              className='dot h-2.5 rounded-full transition-all duration-300'
-              style={{ width: `${(progress * 100).toFixed(0)}%` }}
-            />
-          </div>
+          {!progress || (
+            <div className='w-1/2 mb-24 bg-gray-700 rounded-full h-2.5'>
+              <div
+                className='dot h-2.5 rounded-full transition-all duration-300'
+                style={{ width: `${(progress * 100).toFixed(0)}%` }}
+              />
+            </div>
+          )}
           {/* <div className='mt-1 pb-24 text-xs text-gray-300'>
             {(progress * 100).toFixed(0)}%
           </div> */}
