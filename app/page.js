@@ -1,12 +1,5 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <div className="h-screen flex items-center justify-center bg-black">
-
-      other page
-    </div>
-
-
-  );
+  redirect('/home');
 }
