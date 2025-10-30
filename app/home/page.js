@@ -286,7 +286,9 @@ function Home() {
             <p className='text-lg text-gray-400 italic'>“{claim}”</p>
           </div>
           <div className='bigtext'>
-            <p>{result.verdict ?? 'No Verdict'}</p>
+            <p className='text-center' style={{ whiteSpace: 'pre-line' }}>
+              {result.verdict ?? `No Verdict.\n${result.justification}`}
+            </p>
           </div>
           {result.confidence && (
             <div className='mt-2 text-center text-gray-400 text-lg'>
