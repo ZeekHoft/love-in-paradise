@@ -290,7 +290,7 @@ function Home() {
               {result.verdict ?? `No Verdict.\n${result.justification}`}
             </p>
           </div>
-          {result.confidence && (
+          {result.confidence !== 0 && (
             <div className='mt-2 text-center text-gray-400 text-lg'>
               Confidence Level:{' '}
               <span className='font-semibold text-white'>
