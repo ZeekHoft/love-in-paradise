@@ -49,6 +49,7 @@ def search_news(
         params["num"] = num
         params["start"] = start
         response = requests.get(url=URL, params=params)
+        print(response)
         results = response.json()
 
         if "items" in results:

@@ -1,44 +1,55 @@
 import newspaper
+import requests
+from time import sleep
 
-# import validators
-
-# list_of_urls = [
-#             "https://www.bworldonline.com/top-stories/2025/09/05/696236/philippine-banks-npl-ratio-rises-to-8-month-high-in-july",
-#             "https://www.bworldonline.com/top-stories/2025/09/05/695808/ng-outstanding-debt-surges-to-record-p17-56-trillion-as-of-end-july",
-#             "https://www.bworldonline.com/top-stories/2025/09/05/696273/new-law-allows-foreign-investors-to-lease-land-in-the-philippines-for-up-to-99-years",
-#             "https://www.bworldonline.com/top-stories/2025/09/05/696136/philippine-inflation-quickens-to-1-5-in-august"
-#             ]
-
-
-# Parse through each url and display its content
 class ArticleScraper:
     def article_scraper(self, article_links):
-        try:
-            from time import sleep
+        links_data = {}
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/123.0.0.0 Safari/537.36"
+            )
+        }
 
-            sleep(1)  # delay to avoid limit rates
-            article_content = []
-            links_data = {}
-            # add valid URL detector
-            for url in article_links:
-                url_i = newspaper.Article(url="%s" % (url), language="en")
-                url_i.download()
-                url_i.parse()
-                # content = f"TITLE:{url_i.title} CONTENT: {url_i.text}"
-                # article_content.append(content)
+        for url in article_links:
+            try:
+                sleep(1)  # Avoid rate limiting
+                
+                # First, check if the URL is even reachable
+                r = requests.get(url, headers=headers, timeout=10)
+                if r.status_code != 200:
+                    print(f"Skipping {url}: status code {r.status_code}")
+                    continue
+
+                # Create article with custom config (longer timeout, user-agent)
+                config = newspaper.Config()
+                config.browser_user_agent = headers["User-Agent"]
+                config.request_timeout = 15  # ⬅ longer timeout
+                config.memoize_articles = False
+
+                article = newspaper.Article(url=url, language="en", config=config)
+                article.download()
+                article.parse()
+
+                if not article.text.strip():
+                    print(f"⚠ Empty content for {url}")
+                    continue
 
                 links_data[url] = {
-                    "headline": url_i.title,
-                    "content": url_i.text,
+                    "headline": article.title.strip() if article.title else "Untitled",
+                    "content": article.text.strip(),
                     "link": url,
                 }
 
-            return links_data
-            # return "\n".join(article_content)
-        except Exception as e:
-            print(f"Error scraping article: {e}")
-            return {}
+            except newspaper.article.ArticleException as e:
+                print(f"❌ Newspaper failed for {url}: {e}")
+            except requests.exceptions.RequestException as e:
+                print(f"❌ Request failed for {url}: {e}")
+            except Exception as e:
+                print(f"⚠ Unexpected error for {url}: {e}")
 
-
-# news = ArticleScraper()
-# print(news.article_scraper(list_of_urls))
+        if not links_data:
+            print("⚠ Problem occurred in scraping data")
+        return links_data

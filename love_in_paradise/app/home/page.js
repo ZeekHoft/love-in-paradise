@@ -8,7 +8,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [showVerdict, setShowVerdict] = useState(false);
   const [isVerdictTrue, setIsVerdictTrue] = useState(false);
-  const [useLLM, setUseLLM] = useState(false);
+  const [useLLM, setUseLLM] = useState(true);
 
   const rotatingPhrases = [
     "Government to distribute ₱10,000 cash aid to all residents next week, claims viral post.",
@@ -166,8 +166,12 @@ async function readStream(url = "", data = {}) {
           </div>
 
           {/* 👇 LLM toggle */}
-          <div className="flex items-center space-x-2 mt-4">
+          <div className="flex items-center space-x-2 mt-4 relative">
             <label className="text-gray-300 text-sm">Use LLM</label>
+
+
+
+            {/* Toggle */}
             <button
               onClick={() => setUseLLM(!useLLM)}
               className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
@@ -175,11 +179,25 @@ async function readStream(url = "", data = {}) {
               }`}
             >
               <div
-                className={`bg-white w-4 h-4 rounded-full transform transition ${
-                  useLLM ? "translate-x-6" : ""
-                }`}
+                className={`bg-white w-4 h-4 rounded-full transform transition 
+                            ${useLLM ? "translate-x-6" : "translate-x-0"}`}
               />
             </button>
+                        {/* Info Icon + Tooltip */}
+            <div className="relative group flex items-center">
+              <div className="w-5 h-5 rounded-full border border-gray-400 text-gray-300 
+                              flex items-center justify-center text-xs cursor-pointer 
+                              hover:text-white hover:border-white">
+                i
+              </div>
+
+              {/* Tooltip */}
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 
+                              bg-black text-gray-200 text-xs px-3 py-1 rounded-md pointer-events-none 
+                              whitespace-nowrap transition-opacity duration-300">
+                LLM (Large Language Model) usage is enabled by default. Toggle to disable it if you prefer faster but simpler responses.
+              </div>
+            </div>
           </div>
 
           <div className="relative w-full max-w-2xl">
@@ -216,7 +234,7 @@ async function readStream(url = "", data = {}) {
           <div className="bigtext">
             <p>{message.verdict ?? "No Verdict"}</p>
           </div>
-          {message.confidence && (
+          {!useLLM && message.confidence && (
             <div className="mt-2 text-center text-gray-400 text-lg">
               Confidence Level:{" "}
               <span className="font-semibold text-white">
@@ -224,7 +242,7 @@ async function readStream(url = "", data = {}) {
               </span>
             </div>
           )}
-
+          
           {message.article_urls && message.article_urls.length > 0 && (
             <div className="flex flex-col md:flex-row gap-6 mt-6 max-w-6xl w-full">
               {/* Articles Section */}

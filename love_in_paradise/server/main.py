@@ -38,7 +38,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         "progress": 0.0,
     }
 
-    results["currentProcess"] = "Checking if claim is verifiable"
+    results["currentProcess"] = "Checking if claim is verifiable..."
     results["progress"] = 1 / 8
     yield results
 
@@ -55,7 +55,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         input_classification = classify_input(claim_input)
         if input_classification in ACCEPT_LIST:
 
-            results["currentProcess"] = "Searching the web"
+            results["currentProcess"] = "Searching the web..."
             results["progress"] = 2 / 8
             yield results
 
@@ -91,7 +91,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         yield results
         return
 
-    results["currentProcess"] = "Retrieving data from articles"
+    results["currentProcess"] = "Retrieving data from articles..."
     results["progress"] = 3 / 8
     yield results
 
@@ -118,7 +118,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
         print(url)
         print(data["headline"])
 
-    results["currentProcess"] = "Searching for relevant information"
+    results["currentProcess"] = "Searching for relevant information..."
     results["progress"] = 4 / 8
     yield results
 
@@ -164,7 +164,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     claim_triples = info_ext.generate_triples(claim_input)
     print(f"Claim triples: {claim_triples}")
 
-    results["currentProcess"] = "Comparing evidence to claim"
+    results["currentProcess"] = "Comparing evidence to claim..."
     results["progress"] = 5 / 8
     yield results
 
@@ -182,20 +182,23 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
             oie=info_ext,
             claim_triples=claim_triples,
         )
+        article["altscore"] = score_article_alternative(claim=claim_input, article_text=article["content"])
     print("Done scoring\n")
 
-    results["currentProcess"] = "Aggregating Scores"
+
+    results["currentProcess"] = "Aggregating Scores..."
     results["progress"] = 6 / 8
     yield results
 
-    print("SCORE | ARTICLE")
+    print("SCORE | ALTSCORE | ARTICLE")
     agree = []
     disagree = []
     urls_to_remove = []
     for article in news_data.values():
         score = article["score"]
+        altscore = article["altscore"]
         if score > 0 or score < 0:
-            print(f"{score:{" .2f" if score > 0 else ".2f"}} | {article["headline"]}")
+            print(f"{score:{" .2f" if score > 0 else ".2f"}} | {altscore:{" .5f" if altscore >= 0 else ".5f"}} | {article["headline"]}")
             if score > 0:
                 agree.append(article)
             else:
@@ -225,7 +228,7 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # Few disagree-ing confidence: low confidence, -> Likely False
     # More disagree-ing confidence: high confidence, -> False
 
-    results["currentProcess"] = "Finalizing score"
+    results["currentProcess"] = "Finalizing score..."
     results["progress"] = 7 / 8
     yield results
 
@@ -238,19 +241,19 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
     # AGGREGATION OF VERDICT AND JUSTIFICATION
     # ===============================================================
     # Decide verdict based on average score
-    THRESHOLD1 = 0.3
-    THRESHOLD2 = 0.45
+    THRESHOLD1 = 0.15
+    THRESHOLD2 = 0.4
 
     if -THRESHOLD1 < average_score < THRESHOLD1:
-        verdict = "UNSURE"
+        verdict = "Unsure"
     elif average_score <= -THRESHOLD2:
-        verdict = "FALSE"
+        verdict = "False"
     elif average_score <= -THRESHOLD1:
-        verdict = "LIKELY FALSE"
+        verdict = "Likely False"
     elif average_score >= THRESHOLD2:
-        verdict = "TRUE"
+        verdict = "True"
     elif average_score >= THRESHOLD1:
-        verdict = "LIKELY TRUE"
+        verdict = "Likely True"
 
     # JUSTIFICATION GENERATION
     if use_llm:
@@ -327,13 +330,48 @@ def love_in_paradise(claim, use_llm=False) -> Generator[dict, None, None]:
 
 
 
+import re
+from transformers import pipeline
+from difflib import SequenceMatcher
+
+nli = pipeline("text-classification", model="facebook/bart-large-mnli")
+
+def chunk_text(text, max_sentences=3):
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    chunks = []
+    for i in range(0, len(sentences), max_sentences):
+        chunk = " ".join(sentences[i:i+max_sentences])
+        if len(chunk.strip()) > 0:
+            chunks.append(chunk)
+    return chunks
+
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def score_article_alternative(claim, article_text):
+    chunks = [c for c in chunk_text(article_text) if similar(claim, c) > 0.2]
+    scores = []
+    for chunk in chunks:
+        result = nli(f"{claim} </s> {chunk}", return_all_scores=True)[0]
+        score = safe_score(result)
+        scores.append(score)
+    return sum(scores) / len(scores) if scores else 0
+
+def safe_score(result):
+    labels = {s["label"].upper(): s["score"] for s in result}
+    entail = labels.get("ENTAILMENT", 0.0)
+    contra = labels.get("CONTRADICTION", 0.0)
+    return entail - contra
+
+
 def score_article(
     claim: str, article: dict, oie: OpenInformationExtraction, claim_triples: list
 ):
     """
     Score an article based on claim
     """
-    sentences = article["sentences"]
+    sentences = article["sentences"] 
 
     # Triple comparison with claim
     common_count = 0
