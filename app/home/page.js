@@ -144,7 +144,10 @@ function Home() {
       }
     }
 
-    readStream('http://localhost:8080/api/home', {
+    // LOCAL LINK
+    // http://localhost:8080/api/home
+
+    readStream('/api/', {
       name: claimText,
       useLLM: useLLM,
     });
