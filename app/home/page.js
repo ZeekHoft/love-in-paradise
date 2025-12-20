@@ -147,10 +147,13 @@ function Home() {
     // LOCAL LINK
     // http://localhost:8080/api/home
 
-    readStream('/api/', {
-      name: claimText,
-      useLLM: useLLM,
-    });
+    readStream(
+      'https://love-in-paradise-api-production.up.railway.app/api/home/',
+      {
+        name: claimText,
+        useLLM: useLLM,
+      }
+    );
   };
 
   const handleLine = (data) => {
