@@ -148,7 +148,7 @@ function Home() {
     // http://localhost:8080/api/home
 
     readStream(
-      'https://love-in-paradise-api-production.up.railway.app/api/home/',
+      'https://love-in-paradise-api-production.up.railway.app/api/home',
       {
         name: claimText,
         useLLM: useLLM,
