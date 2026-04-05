@@ -189,14 +189,14 @@ function About() {
                         borderLeft: '2px solid #ff6e7f',
                     }}>
                         <div style={{ fontSize: 17, fontWeight: 100, color: '#f0f4f8', lineHeight: 1.6, marginBottom: 16 }}>
-                            The Philippines leads all Asia-Pacific nations in daily social media use. That reach is also misinformation's greatest advantage.
+                            The Philippines leads all Asia-Pacific nations in daily social media use. That reach is also misinformation&apos;s greatest advantage.
                         </div>
                         <div style={{ fontSize: 13, color: '#898989', lineHeight: 1.9 }}>
-                            Misinformation spreads because it's fast, emotionally compelling, and nearly impossible to verify manually at scale.
+                            Misinformation spreads because it&apos;s fast, emotionally compelling, and nearly impossible to verify manually at scale.
                             Deception Detector was built to close that gap — an automated tool that dissects news claims, collects evidence from
                             credible local sources, and performs semantic analysis to separate fact from falsehood.
                             <br /><br />
-                            The goal isn't just accuracy. It's transparency. Every verdict comes with a justification and a confidence score,
+                            The goal isn&apos;t just accuracy. It&apos;s transparency. Every verdict comes with a justification and a confidence score,
                             so users understand the reasoning — not just the conclusion. By making fact-checking accessible and explainable,
                             the system promotes digital literacy and gives Filipino users a real upper hand against organized misinformation campaigns.
                         </div>
